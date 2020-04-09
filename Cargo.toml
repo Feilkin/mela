@@ -1,0 +1,30 @@
+[package]
+name = "mela"
+version = "0.1.0"
+authors = ["Aatu Hieta <aatu@hieta.fi>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+image = "0.23"
+imgui = "0.3.0"
+nalgebra = "0.20.0"
+nphysics3d = "0.14.0"
+replace_with = "0.1.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+shaderc = "0.6.2"
+winit = "0.22.0"
+wgpu = "0.4.0"
+zerocopy = "0.3"
+
+[[example]]
+name="hello3d"
+path="examples/hello3d/main.rs"
+test=true
+
+[[example]]
+name="hello2d"
+path="examples/hello2d/main.rs"
+test=true
