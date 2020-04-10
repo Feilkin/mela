@@ -1,5 +1,7 @@
 //! Loadable stuff
 
+pub mod scene;
+
 pub enum AssetState<T> {
     Loading(Box<dyn Asset<T>>),
     Done(T),
@@ -60,7 +62,7 @@ where
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Bgra8Unorm,
+            format: wgpu::TextureFormat::Bgra8UnormSrgb,
             usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
         });
 

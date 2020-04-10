@@ -1,18 +1,26 @@
 //! 3D graphics demo
 
+use crate::states::States;
 use mela::application::Application;
 use mela::debug::DebugContext;
 use mela::game::Playable;
 use mela::gfx::RenderContext;
+use mela::state::State;
 use std::time::Duration;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::ControlFlow;
 
-struct Hello3dGame {}
+mod states;
+
+struct Hello3dGame {
+    state: States,
+}
 
 impl Hello3dGame {
     pub fn new() -> Hello3dGame {
-        Hello3dGame {}
+        Hello3dGame {
+            state: States::new(),
+        }
     }
 }
 
@@ -23,7 +31,11 @@ impl Playable for Hello3dGame {
         render_ctx: &mut RenderContext,
         debug_ctx: &mut DebugContext,
     ) -> Self {
-        self
+        let Hello3dGame { state } = self;
+
+        let new_state = state.update(delta, render_ctx, debug_ctx);
+
+        Hello3dGame { state: new_state }
     }
 
     fn push_event<T>(&mut self, event: &Event<T>) -> Option<ControlFlow> {
@@ -37,22 +49,7 @@ impl Playable for Hello3dGame {
     }
 
     fn redraw(&self, render_ctx: &mut RenderContext, debug_ctx: &mut DebugContext) -> () {
-        //        let mut rpass = render_ctx
-        //            .encoder
-        //            .begin_render_pass(&wgpu::RenderPassDescriptor {
-        //                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-        //                    attachment: &render_ctx.frame.view,
-        //                    resolve_target: None,
-        //                    load_op: wgpu::LoadOp::Clear,
-        //                    store_op: wgpu::StoreOp::Store,
-        //                    clear_color: wgpu::Color::GREEN,
-        //                }],
-        //                depth_stencil_attachment: None,
-        //            });
-        //
-        //        rpass.set_pipeline(&render_ctx.default_pipeline);
-        //        rpass.set_bind_group(0, &render_ctx.default_bindgroup, &[]);
-        //        rpass.draw(0..3, 0..1);
+        self.state.redraw(render_ctx, debug_ctx);
     }
 }
 

@@ -15,15 +15,26 @@ pub struct RenderContext<'s, 'p, 'd> {
     pub frame: wgpu::SwapChainOutput<'s>,
     pub encoder: wgpu::CommandEncoder,
     pub device: &'d wgpu::Device,
-    pub default_pipeline: &'p wgpu::RenderPipeline,
-    pub default_bindgroup_layout: &'p wgpu::BindGroupLayout,
+    pub pipelines: &'p DefaultPipelines,
 }
 
-pub fn default_render_pipeline(
+pub struct DefaultPipelines {
+    pub textured: (wgpu::RenderPipeline, wgpu::BindGroupLayout),
+    pub flat: (wgpu::RenderPipeline, wgpu::BindGroupLayout),
+}
+
+pub fn default_render_pipelines(device: &wgpu::Device) -> DefaultPipelines {
+    DefaultPipelines {
+        textured: default_textured_pipeline(device),
+        flat: default_flat_pipeline(device),
+    }
+}
+
+fn default_textured_pipeline(
     device: &wgpu::Device,
 ) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_str!("../../assets/shader/default.vert.glsl");
-    let fs_source = include_str!("../../assets/shader/default.frag.glsl");
+    let vs_source = include_str!("../../assets/shader/textured.vert.glsl");
+    let fs_source = include_str!("../../assets/shader/textured.frag.glsl");
 
     let mut compiler = shaderc::Compiler::new().expect("failed to create SPIR-V compiler");
 
@@ -112,13 +123,122 @@ pub fn default_render_pipeline(
                     },
                     wgpu::VertexAttributeDescriptor {
                         offset: 3 * 4,
-                        format: wgpu::VertexFormat::Float4,
+                        format: wgpu::VertexFormat::Float3,
                         shader_location: 1,
                     },
                     wgpu::VertexAttributeDescriptor {
-                        offset: 4 * 4 + 3 * 4,
+                        offset: 3 * 4 + 3 * 4,
                         format: wgpu::VertexFormat::Float2,
                         shader_location: 2,
+                    },
+                    wgpu::VertexAttributeDescriptor {
+                        offset: 4 * 4 + 3 * 4 + 2 * 4,
+                        format: wgpu::VertexFormat::Float4,
+                        shader_location: 3,
+                    },
+                ],
+            }],
+            sample_count: 1,
+            sample_mask: 0,
+            alpha_to_coverage_enabled: false,
+        }),
+        bind_group_layout,
+    )
+}
+
+fn default_flat_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
+    let vs_source = include_str!("../../assets/shader/flat.vert.glsl");
+    let fs_source = include_str!("../../assets/shader/flat.frag.glsl");
+
+    let mut compiler = shaderc::Compiler::new().expect("failed to create SPIR-V compiler");
+
+    let vs = compiler
+        .compile_into_spirv(
+            vs_source,
+            shaderc::ShaderKind::Vertex,
+            "flat.vert.glsl",
+            "main",
+            None,
+        )
+        .expect("failed to compile vertex shader into SPIR-V");
+
+    let fs = compiler
+        .compile_into_spirv(
+            fs_source,
+            shaderc::ShaderKind::Fragment,
+            "flat.frag.glsl",
+            "main",
+            None,
+        )
+        .expect("failed to compile fragment shader into SPIR-V");
+
+    let vs_module = device
+        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(vs.as_binary_u8())).unwrap());
+    let fs_module = device
+        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(fs.as_binary_u8())).unwrap());
+
+    let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        bindings: &[wgpu::BindGroupLayoutBinding {
+            binding: 0,
+            visibility: wgpu::ShaderStage::VERTEX,
+            ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+        }],
+    });
+
+    let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        bind_group_layouts: &[&bind_group_layout],
+    });
+
+    (
+        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            layout: &pipeline_layout,
+            vertex_stage: wgpu::ProgrammableStageDescriptor {
+                module: &vs_module,
+                entry_point: "main",
+            },
+            fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
+                module: &fs_module,
+                entry_point: "main",
+            }),
+            rasterization_state: Some(wgpu::RasterizationStateDescriptor {
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: wgpu::CullMode::Back,
+                depth_bias: 0,
+                depth_bias_slope_scale: 0.0,
+                depth_bias_clamp: 0.0,
+            }),
+            primitive_topology: wgpu::PrimitiveTopology::TriangleList,
+            color_states: &[wgpu::ColorStateDescriptor {
+                format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                alpha_blend: wgpu::BlendDescriptor::REPLACE,
+                color_blend: wgpu::BlendDescriptor::REPLACE,
+                write_mask: wgpu::ColorWrite::ALL,
+            }],
+            depth_stencil_state: None,
+            index_format: wgpu::IndexFormat::Uint16,
+            vertex_buffers: &[wgpu::VertexBufferDescriptor {
+                stride: mem::size_of::<Vertex>() as u64,
+                step_mode: wgpu::InputStepMode::Vertex,
+                attributes: &[
+                    wgpu::VertexAttributeDescriptor {
+                        offset: 0,
+                        format: wgpu::VertexFormat::Float3,
+                        shader_location: 0,
+                    },
+                    wgpu::VertexAttributeDescriptor {
+                        offset: 3 * 4,
+                        format: wgpu::VertexFormat::Float3,
+                        shader_location: 1,
+                    },
+                    wgpu::VertexAttributeDescriptor {
+                        offset: 3 * 4 + 3 * 4,
+                        format: wgpu::VertexFormat::Float2,
+                        shader_location: 2,
+                    },
+                    wgpu::VertexAttributeDescriptor {
+                        offset: 4 * 4 + 3 * 4 + 2 * 4,
+                        format: wgpu::VertexFormat::Float4,
+                        shader_location: 3,
                     },
                 ],
             }],

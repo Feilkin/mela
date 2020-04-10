@@ -34,7 +34,7 @@ impl Play {
         let bind_group = render_ctx
             .device
             .create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &render_ctx.default_bindgroup_layout,
+                layout: &render_ctx.pipelines.textured.1,
                 bindings: &[
                     wgpu::Binding {
                         binding: 0,
@@ -84,7 +84,8 @@ impl State for Play {
             .create_buffer_mapped(vertices.len(), wgpu::BufferUsage::VERTEX)
             .fill_from_slice(&vertices);
 
-        let index_buf = render_ctx.device
+        let index_buf = render_ctx
+            .device
             .create_buffer_mapped(indices.len(), wgpu::BufferUsage::INDEX)
             .fill_from_slice(&indices);
 
@@ -101,11 +102,11 @@ impl State for Play {
                 depth_stencil_attachment: None,
             });
 
-        rpass.set_pipeline(&render_ctx.default_pipeline);
+        rpass.set_pipeline(&render_ctx.pipelines.textured.0);
         rpass.set_bind_group(0, &self.bind_group, &[]);
         rpass.set_index_buffer(&index_buf, 0);
         rpass.set_vertex_buffers(0, &[(&vertex_buf, 0)]);
-        rpass.draw_indexed(0 .. indices.len() as u32, 0, 0 .. 1);
+        rpass.draw_indexed(0..indices.len() as u32, 0, 0..1);
     }
 }
 

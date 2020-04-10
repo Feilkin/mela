@@ -10,7 +10,7 @@ use winit::{
 
 use crate::debug::DebugContext;
 use crate::game::Playable;
-use crate::gfx::{default_render_pipeline, RenderContext};
+use crate::gfx::{default_render_pipelines, RenderContext};
 use crate::profiler::Profiler;
 use std::time::Instant;
 use winit::dpi::PhysicalSize;
@@ -73,7 +73,7 @@ impl<G: 'static + Playable> Application<G> {
             limits: wgpu::Limits::default(),
         });
 
-        let (render_pipeline, bind_group) = default_render_pipeline(&device);
+        let render_pipelines = default_render_pipelines(&device);
 
         let mut sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
@@ -113,8 +113,7 @@ impl<G: 'static + Playable> Application<G> {
                             frame,
                             encoder,
                             device: &device,
-                            default_pipeline: &render_pipeline,
-                            default_bindgroup_layout: &bind_group,
+                            pipelines: &render_pipelines,
                         };
                         let mut debug_ctx = DebugContext {};
 
