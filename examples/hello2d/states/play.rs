@@ -1,10 +1,11 @@
 use crate::states::loading::GameAssets;
 use crate::states::States;
 use mela::debug::{DebugContext, DebugDrawable};
-use mela::gfx::primitives::{Quad, Vertex};
+use mela::gfx::primitives::{Quad, Vertex, MVP};
 use mela::gfx::RenderContext;
 use mela::state::State;
 use std::time::Duration;
+use nalgebra::{Vector2, Vector3};
 
 pub struct Play {
     assets: GameAssets,
@@ -31,10 +32,27 @@ impl Play {
             compare_function: wgpu::CompareFunction::Never,
         });
 
+        let projection = nalgebra::Matrix4::new_nonuniform_scaling(&Vector3::new(1., 16./9., 1.))
+            .append_translation(&Vector3::new(-1., -1., 0.));
+
+        let view = nalgebra::Matrix4::new_translation(&Vector3::new(0., 0., 0.));
+        let model = nalgebra::Matrix4::new_scaling(1.);
+
+        let transformations = MVP {
+            model: model.into(),
+            view: view.into(),
+            proj: projection.into(),
+        };
+
+        let transforms_buffer = render_ctx
+            .device
+            .create_buffer_mapped(1, wgpu::BufferUsage::UNIFORM)
+            .fill_from_slice(&[transformations]);
+
         let bind_group = render_ctx
             .device
             .create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &render_ctx.pipelines.textured.1,
+                layout: &render_ctx.pipelines.pixel.1,
                 bindings: &[
                     wgpu::Binding {
                         binding: 0,
@@ -44,6 +62,13 @@ impl Play {
                         binding: 1,
                         resource: wgpu::BindingResource::Sampler(&sampler),
                     },
+                    wgpu::Binding {
+                        binding: 2,
+                        resource: wgpu::BindingResource::Buffer {
+                            buffer: &transforms_buffer,
+                            range: 0..std::mem::size_of::<MVP>() as u64
+                        }
+                    }
                 ],
             });
 
@@ -70,14 +95,8 @@ impl State for Play {
     fn redraw(&self, render_ctx: &mut RenderContext, debug_ctx: &mut DebugContext) {
         let quad = Quad::new(17., 17., 16., 16., 543., 543.);
 
-        let (mut vertices, indices) = quad.vertices_and_indices([0., 0., 0.], [1., 1., 1., 1.]);
+        let (mut vertices, indices) = quad.vertices_and_indices2d([0., 0.], [1., 1., 1., 1.]);
 
-        // TODO: fix scaling
-        for vert in &mut vertices {
-            for coord in &mut vert.position {
-                *coord = *coord * 3.;
-            }
-        }
 
         let vertex_buf = render_ctx
             .device
@@ -102,7 +121,7 @@ impl State for Play {
                 depth_stencil_attachment: None,
             });
 
-        rpass.set_pipeline(&render_ctx.pipelines.textured.0);
+        rpass.set_pipeline(&render_ctx.pipelines.pixel.0);
         rpass.set_bind_group(0, &self.bind_group, &[]);
         rpass.set_index_buffer(&index_buf, 0);
         rpass.set_vertex_buffers(0, &[(&vertex_buf, 0)]);

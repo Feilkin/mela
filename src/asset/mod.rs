@@ -1,6 +1,7 @@
 //! Loadable stuff
 
 pub mod scene;
+pub mod tilemap;
 
 pub enum AssetState<T> {
     Loading(Box<dyn Asset<T>>),

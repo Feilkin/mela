@@ -2,13 +2,21 @@
 
 use zerocopy::{AsBytes, FromBytes};
 
-use crate::gfx::Texture;
+use crate::gfx::{Texture, RenderContext};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, AsBytes, FromBytes)]
 pub struct Vertex {
     pub position: [f32; 3],
     pub normal: [f32; 3],
+    pub texture_coords: [f32; 2],
+    pub color: [f32; 4],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, AsBytes, FromBytes)]
+pub struct Vertex2D {
+    pub position: [f32; 2],
     pub texture_coords: [f32; 2],
     pub color: [f32; 4],
 }
@@ -35,14 +43,16 @@ impl Quad {
     ) -> ([Vertex; 4], [u16; 6]) {
         let [sw, sh] = self.source_size;
 
+        let (w, h) = (self.size[0] / sw, self.size[1] / sh);
+
         // left
         let x0 = self.position[0] / sw;
         // top
         let y0 = self.position[1] / sh;
         // right
-        let x1 = x0 + self.size[0] / sw;
+        let x1 = x0 + w;
         // down
-        let y1 = y0 + self.size[1] / sh;
+        let y1 = y0 + h;
         let z = translation[2];
 
         // make normal face Z axis because we lazy
@@ -59,21 +69,21 @@ impl Quad {
                 },
                 // top right
                 Vertex {
-                    position: [x1 + translation[0], y0 + translation[1], z],
+                    position: [translation[0] + w, translation[1], z],
                     normal,
                     color,
                     texture_coords: [x1, y0],
                 },
                 // bottom left
                 Vertex {
-                    position: [x0 + translation[0], y1 + translation[1], z],
+                    position: [translation[0], translation[1] + h, z],
                     normal,
                     color,
                     texture_coords: [x0, y1],
                 },
                 // bottom right
                 Vertex {
-                    position: [x1 + translation[0], y1 + translation[1], z],
+                    position: [translation[0] + w, translation[1] + h, z],
                     normal,
                     color,
                     texture_coords: [x1, y1],
@@ -81,6 +91,73 @@ impl Quad {
             ],
             [0, 1, 3, 0, 3, 2],
         )
+    }
+    pub fn vertices_and_indices2d(
+        &self,
+        translation: [f32; 2],
+        color: [f32; 4],
+    ) -> ([Vertex2D; 4], [u16; 6]) {
+        let [sw, sh] = self.source_size;
+        let (w, h) = (self.size[0] / sw, self.size[1] / sh);
+
+        // left
+        let x0 = self.position[0] / sw;
+        // top
+        let y0 = self.position[1] / sh;
+        // right
+        let x1 = x0 + w;
+        // down
+        let y1 = y0 + h;
+
+        (
+            [
+                // top left
+                Vertex2D {
+                    position: [translation[0], translation[1]],
+                    color,
+                    texture_coords: [x0, y0],
+                },
+                // top right
+                Vertex2D {
+                    position: [translation[0] + w, translation[1]],
+                    color,
+                    texture_coords: [x1, y0],
+                },
+                // bottom left
+                Vertex2D {
+                    position: [translation[0], translation[1] + h],
+                    color,
+                    texture_coords: [x0, y1],
+                },
+                // bottom right
+                Vertex2D {
+                    position: [translation[0] + w, translation[1] + h],
+                    color,
+                    texture_coords: [x1, y1],
+                },
+            ],
+            [0, 1, 3, 0, 3, 2],
+        )
+    }
+}
+
+pub struct Mesh2D {
+    vertices: Vec<Vertex2D>,
+    indices: Vec<u16>,
+    texture: Texture,
+}
+
+impl Mesh2D {
+    pub fn new(vertices: Vec<Vertex2D>, indices: Vec<u16>, texture: Texture) -> Mesh2D {
+        Mesh2D {
+            vertices,
+            indices,
+            texture
+        }
+    }
+
+    pub fn draw(&self, render_ctx: &mut RenderContext) {
+        // FIXME implemtn this
     }
 }
 
