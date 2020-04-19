@@ -5,8 +5,6 @@ use std::time::Duration;
 use crate::ecs::world::World;
 use crate::game::IoState;
 use crate::gfx::RenderContext;
-use crate::profiler;
-use crate::profiler::{OpenTagTree, Profiler};
 
 pub trait System<W: World> {
     fn name(&self) -> &'static str;

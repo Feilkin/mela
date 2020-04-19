@@ -2,21 +2,30 @@
 
 use crate::asset::tilemap::tile::Tile;
 use crate::asset::tilemap::Object;
+use crate::asset::{Asset, AssetState};
 use crate::ecs::world::{World, WorldStorage};
 use crate::gfx::{RenderContext, Spritebatch, Texture};
 use gltf::Mesh;
 use nalgebra::{Matrix, Matrix4, Vector2};
 use ncollide2d::shape::{Cuboid, ShapeHandle};
+use std::path::Path;
 use std::rc::Rc;
 use wgpu::TextureView;
-use crate::asset::{AssetState, Asset};
-use std::path::Path;
 
 pub trait Layer<W: World> {
     fn update(&mut self, render_ctx: &mut RenderContext);
 
+    fn objects(&self) -> &[Object] {
+        &[]
+    }
+
     fn draw(&self, camera: &Matrix4<f32>, render_ctx: &mut RenderContext);
-    fn draw_to(&self, camera: &Matrix4<f32>, view: &[&wgpu::TextureView], render_ctx: &mut RenderContext);
+    fn draw_to(
+        &self,
+        camera: &Matrix4<f32>,
+        view: &[&wgpu::TextureView],
+        render_ctx: &mut RenderContext,
+    );
 
     /// Adds all entities defined by this layer to given world
     fn add_entities(&self, world: W) -> W;
@@ -85,7 +94,8 @@ impl<W: World> Layer<W> for TileLayer {
     fn update(&mut self, render_ctx: &mut RenderContext) {
         if self.material_spritebatch.is_none() {
             // FIXME: get rid of this :D
-            let mut texture_asset: Box<dyn Asset<Texture>> = Box::new("assets/spritesheets/ld46_mat.png");
+            let mut texture_asset: Box<dyn Asset<Texture>> =
+                Box::new("assets/spritesheets/ld46_mat.png");
 
             let material_texture = loop {
                 match texture_asset.poll(render_ctx).unwrap() {
@@ -117,14 +127,22 @@ impl<W: World> Layer<W> for TileLayer {
         }
 
         self.spritebatch.update(render_ctx);
-        self.material_spritebatch.as_mut().unwrap().update(render_ctx);
+        self.material_spritebatch
+            .as_mut()
+            .unwrap()
+            .update(render_ctx);
     }
 
     fn draw(&self, camera: &Matrix4<f32>, render_ctx: &mut RenderContext) {
         self.spritebatch.draw(camera, render_ctx);
     }
 
-    fn draw_to(&self, camera: &Matrix4<f32>, view: &[&TextureView], render_ctx: &mut RenderContext) {
+    fn draw_to(
+        &self,
+        camera: &Matrix4<f32>,
+        view: &[&TextureView],
+        render_ctx: &mut RenderContext,
+    ) {
         self.spritebatch.draw_to(camera, view[0], render_ctx);
 
         if let Some(ref msb) = self.material_spritebatch {
@@ -197,11 +215,20 @@ impl<W: World> Layer<W> for ObjectLayer {
         // TODO: implement
     }
 
+    fn objects(&self) -> &[Object] {
+        &self.objects
+    }
+
     fn draw(&self, camera: &Matrix4<f32>, render_ctx: &mut RenderContext) {
         // TODO: implement
     }
 
-    fn draw_to(&self, camera: &Matrix4<f32>, view: &[&TextureView], render_ctx: &mut RenderContext) {
+    fn draw_to(
+        &self,
+        camera: &Matrix4<f32>,
+        view: &[&TextureView],
+        render_ctx: &mut RenderContext,
+    ) {
         // TODO: implement
     }
 

@@ -12,7 +12,7 @@ pub mod debug;
 pub mod ecs;
 pub mod game;
 pub mod gfx;
-pub mod profiler;
+//pub mod profiler;
 pub mod state;
 
 #[cfg(test)]

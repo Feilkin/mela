@@ -1,6 +1,6 @@
 use crate::states::{Play, States};
 use image::load;
-use mela::asset::{Asset, AssetState};
+use mela::asset::{Asset, AssetState, Bytes};
 use mela::debug::{DebugContext, DebugDrawable};
 use mela::game::IoState;
 use mela::gfx::{RenderContext, Texture};
@@ -28,8 +28,18 @@ impl Loading {
         Loading {
             remaining: RequiredGameAssets {
                 textures: vec![
-                    ("spritesheet", Box::new("assets/spritesheets/ld46.png")),
-                    ("material", Box::new("assets/spritesheets/ld46_mat.png")),
+                    (
+                        "spritesheet",
+                        Box::new(Bytes(include_bytes!(
+                            "../../../assets/spritesheets/ld46.png"
+                        ))),
+                    ),
+                    (
+                        "material",
+                        Box::new(Bytes(include_bytes!(
+                            "../../../assets/spritesheets/ld46_mat.png"
+                        ))),
+                    ),
                 ],
             },
             loaded: GameAssets::default(),

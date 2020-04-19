@@ -11,7 +11,6 @@ use winit::{
 use crate::debug::DebugContext;
 use crate::game::Playable;
 use crate::gfx::{default_render_pipelines, RenderContext};
-use crate::profiler::Profiler;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use winit::dpi::PhysicalSize;
@@ -106,14 +105,6 @@ impl<G: 'static + Playable> Application<G> {
             match event {
                 Event::LoopDestroyed => return,
                 Event::MainEventsCleared => window.request_redraw(),
-                Event::WindowEvent {
-                    event: WindowEvent::Resized(size),
-                    ..
-                } => {
-                    sc_desc.width = size.width;
-                    sc_desc.height = size.height;
-                    swap_chain = device.create_swap_chain(&surface, &sc_desc);
-                }
                 Event::RedrawRequested(_) => {
                     let frame = swap_chain.get_next_texture();
                     let update_encoder =

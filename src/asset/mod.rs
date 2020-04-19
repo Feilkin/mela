@@ -3,6 +3,9 @@
 pub mod scene;
 pub mod tilemap;
 
+// wrapper for in memory bytes because asref path things
+pub struct Bytes(pub &'static [u8]);
+
 pub enum AssetState<T> {
     Loading(Box<dyn Asset<T>>),
     Done(T),
@@ -63,6 +66,56 @@ where
         render_ctx: &mut RenderContext,
     ) -> Result<AssetState<Texture>, AssetError> {
         let img = image::open(self.as_ref())?.to_bgra();
+        let img_dim = img.dimensions();
+
+        let texture_extent = wgpu::Extent3d {
+            width: img_dim.0,
+            height: img_dim.1,
+            depth: 1,
+        };
+
+        let texture = render_ctx.device.create_texture(&wgpu::TextureDescriptor {
+            size: texture_extent,
+            array_layer_count: 1,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8UnormSrgb,
+            usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
+        });
+
+        // upload image data to texture
+        let temp_buf = render_ctx
+            .device
+            .create_buffer_mapped(img.len(), wgpu::BufferUsage::COPY_SRC)
+            .fill_from_slice(&img);
+
+        render_ctx.encoder.copy_buffer_to_texture(
+            wgpu::BufferCopyView {
+                buffer: &temp_buf,
+                offset: 0,
+                row_pitch: img_dim.0 * 4,
+                image_height: 0,
+            },
+            wgpu::TextureCopyView {
+                texture: &texture,
+                mip_level: 0,
+                array_layer: 0,
+                origin: Default::default(),
+            },
+            texture_extent,
+        );
+
+        Ok(AssetState::Done(Rc::new(texture)))
+    }
+}
+
+impl Asset<Texture> for Bytes {
+    fn poll(
+        self: Box<Self>,
+        render_ctx: &mut RenderContext,
+    ) -> Result<AssetState<Texture>, AssetError> {
+        let img = image::load_from_memory(&self.0[..])?.to_bgra();
         let img_dim = img.dimensions();
 
         let texture_extent = wgpu::Extent3d {

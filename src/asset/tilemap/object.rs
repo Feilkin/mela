@@ -11,6 +11,7 @@ pub struct Object {
     pub y: f32,
     pub width: f32,
     pub height: f32,
+    pub _type: String,
 }
 
 impl DebugDrawable for Object {}
@@ -23,6 +24,7 @@ impl From<data::Object> for Object {
             y: data.y as f32,
             width: data.width as f32,
             height: data.height as f32,
+            _type: data._type.unwrap_or(String::new()),
         }
     }
 }

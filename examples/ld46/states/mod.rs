@@ -1,9 +1,12 @@
 mod loading;
 mod play;
+mod winner;
 
 pub use loading::Loading;
 pub use play::Play;
+pub use winner::Winner;
 
+use crate::states::winner::Loser;
 use mela::debug::{DebugContext, DebugDrawable};
 use mela::game::IoState;
 use mela::gfx::RenderContext;
@@ -13,6 +16,8 @@ use std::time::Duration;
 pub enum States {
     Loading(Loading),
     Play(Play),
+    Win(Winner),
+    Lose(Loser),
 }
 
 impl States {
@@ -28,6 +33,8 @@ impl State for States {
         match self {
             States::Loading(s) => s.name(),
             States::Play(s) => s.name(),
+            States::Win(s) => s.name(),
+            States::Lose(s) => s.name(),
         }
     }
 
@@ -41,6 +48,8 @@ impl State for States {
         match self {
             States::Loading(s) => s.update(delta, io_state, render_ctx, debug_ctx),
             States::Play(s) => s.update(delta, io_state, render_ctx, debug_ctx),
+            States::Win(s) => s.update(delta, io_state, render_ctx, debug_ctx),
+            States::Lose(s) => s.update(delta, io_state, render_ctx, debug_ctx),
         }
     }
 
@@ -48,6 +57,8 @@ impl State for States {
         match self {
             States::Loading(s) => s.redraw(render_ctx, debug_ctx),
             States::Play(s) => s.redraw(render_ctx, debug_ctx),
+            States::Win(s) => s.redraw(render_ctx, debug_ctx),
+            States::Lose(s) => s.redraw(render_ctx, debug_ctx),
         }
     }
 }

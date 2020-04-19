@@ -101,6 +101,8 @@ pub struct Object {
     pub y: f64,
     pub width: f64,
     pub height: f64,
+    #[serde(rename = "type")]
+    pub _type: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

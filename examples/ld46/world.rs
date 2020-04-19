@@ -1,6 +1,6 @@
 //! its my world :)
 
-use crate::components::{Ld46Components, Player, Position, Sprite};
+use crate::components::{Enemy, Fire, Ld46Components, LightC, Player, Position, Sprite};
 use mela::ecs::entity::EntityBuilder;
 use mela::ecs::world::{World, WorldStorage};
 use mela::ecs::{Entity, VecStorage};
@@ -96,5 +96,41 @@ impl WorldStorage<Player> for MyWorld {
 
     fn mut_storage(&mut self) -> &mut Self::Storage {
         &mut self.components.players
+    }
+}
+
+impl WorldStorage<Enemy> for MyWorld {
+    type Storage = VecStorage<Enemy>;
+
+    fn storage(&self) -> &Self::Storage {
+        &self.components.enemies
+    }
+
+    fn mut_storage(&mut self) -> &mut Self::Storage {
+        &mut self.components.enemies
+    }
+}
+
+impl WorldStorage<LightC> for MyWorld {
+    type Storage = VecStorage<LightC>;
+
+    fn storage(&self) -> &Self::Storage {
+        &self.components.lights
+    }
+
+    fn mut_storage(&mut self) -> &mut Self::Storage {
+        &mut self.components.lights
+    }
+}
+
+impl WorldStorage<Fire> for MyWorld {
+    type Storage = VecStorage<Fire>;
+
+    fn storage(&self) -> &Self::Storage {
+        &self.components.fires
+    }
+
+    fn mut_storage(&mut self) -> &mut Self::Storage {
+        &mut self.components.fires
     }
 }

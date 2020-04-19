@@ -26,7 +26,11 @@ impl Spritebatch {
     }
 
     pub fn add_quad(&mut self, quad: &Quad, position: [f32; 2]) {
-        let (vertices, indices) = quad.vertices_and_indices2d(position, [1., 1., 1., 1.]);
+        self.add_quad_colored(quad, position, [1., 1., 1., 1.]);
+    }
+
+    pub fn add_quad_colored(&mut self, quad: &Quad, position: [f32; 2], color: [f32; 4]) {
+        let (vertices, indices) = quad.vertices_and_indices2d(position, color);
 
         // We need to offset indices by amount of vertices already in the vector.
         let index_offset = self.vertices.len() as u16;
@@ -144,7 +148,7 @@ impl Spritebatch {
 
         // bind group is set here
         let (bind_group, transform_buffer) = self.bind_group.as_ref().unwrap();
-//        let transform_data: [[f32; 4]; 4] = transform.clone().into();
+        //        let transform_data: [[f32; 4]; 4] = transform.clone().into();
 
         //        transform_buffer.map_write_async(0, std::mem::size_of::<[[f32; 4]; 4]>() as u64, move |buf| {
         //            buf.unwrap().data[0] = transform_data
@@ -172,7 +176,12 @@ impl Spritebatch {
         rpass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
     }
 
-    pub fn draw_to(&self, transform: &nalgebra::Matrix4<f32>, view: &wgpu::TextureView, render_ctx: &mut RenderContext) {
+    pub fn draw_to(
+        &self,
+        transform: &nalgebra::Matrix4<f32>,
+        view: &wgpu::TextureView,
+        render_ctx: &mut RenderContext,
+    ) {
         if self.dirty {
             return;
         }
@@ -185,7 +194,7 @@ impl Spritebatch {
 
         // bind group is set here
         let (bind_group, transform_buffer) = self.bind_group.as_ref().unwrap();
-//        let transform_data: [[f32; 4]; 4] = transform.clone().into();
+        //        let transform_data: [[f32; 4]; 4] = transform.clone().into();
 
         //        transform_buffer.map_write_async(0, std::mem::size_of::<[[f32; 4]; 4]>() as u64, move |buf| {
         //            buf.unwrap().data[0] = transform_data

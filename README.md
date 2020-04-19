@@ -2,21 +2,21 @@
 
 This will be the best 4D VR game engine one day :)
 
-## TODO before LD
+## LD46 TODO
 
   * 2D rendering
     * (done) PNG textures
-    * spritebatches
-    * text rendering? bitmap or font files?
-    * particle systems
-  * Input handling
+    * (done) spritebatches
+    * ?? text rendering? bitmap or font files?
+    * ?? particle systems
+  * (done) Input handling
   * Asset support
-    * Tilemap
-    * PNG
+    * (partial) Tilemap
+    * (done) PNG
   * ECS
     * Basic systems
-      * Physics
-    * Events
-    * QoL refactoring
-      * SystemData?
-  * Sound??
+      * ?? Physics
+      * !! combat
+      * animations?
+    * ?? Events
+  * ?? Sound??

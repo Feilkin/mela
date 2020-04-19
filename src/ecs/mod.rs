@@ -135,7 +135,7 @@ impl<'v: 'w, 'w, C: Component> WriteAccess<'w, C> for VecWriter<'v, C> {
         }
 
         if self.data.len() <= index {
-            for _ in 1..index - self.data.len() {
+            for _ in 0..index - self.data.len() {
                 self.data.push(None);
             }
             self.data.push(Some(value));
@@ -145,7 +145,14 @@ impl<'v: 'w, 'w, C: Component> WriteAccess<'w, C> for VecWriter<'v, C> {
     }
 
     fn unset(&mut self, entity: Entity) {
-        unimplemented!()
+        let index = entity.into();
+
+        // Can't be in this storage, so return early.
+        if self.data.capacity() <= index {
+            return;
+        }
+
+        self.data[index] = None;
     }
 
     fn iter_mut<'a>(&'w mut self) -> Box<dyn Iterator<Item = (Entity, &'a mut C)> + 'a>

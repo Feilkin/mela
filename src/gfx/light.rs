@@ -6,25 +6,28 @@ use zerocopy::{AsBytes, FromBytes};
 #[repr(C)]
 pub struct Light {
     pub position: [f32; 3],
-    pub _padding: f32,
+    pub radius: f32,
     pub color: [f32; 3],
     pub strength: f32,
+    pub angle: f32,
+    pub sector: f32,
+    pub _padding: [f32; 2],
 }
 
 #[derive(Debug, Clone, Copy, AsBytes, FromBytes)]
 #[repr(C)]
 pub struct Lights {
-    lights: [Light; 5],
+    lights: [Light; 30],
     num_lights: u32,
 }
 
 impl Lights {
     pub fn new(lights: &[Light]) -> Lights {
-        assert!(lights.len() <= 10);
+        assert!(lights.len() <= 30);
 
-        let mut light_array = [Light::default(); 5];
+        let mut light_array = [Light::default(); 30];
 
-        for i in 0 .. lights.len() {
+        for i in 0..lights.len() {
             light_array[i] = lights[i];
         }
 

@@ -5,8 +5,6 @@ use std::time::Duration;
 use crate::debug::{DebugContext, DebugDrawable};
 use crate::game::IoState;
 use crate::gfx::RenderContext;
-use crate::profiler;
-use crate::profiler::Profiler;
 
 pub trait State: DebugDrawable {
     type Wrapper: State + Sized;

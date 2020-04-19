@@ -4,7 +4,6 @@ use crate::asset::tilemap::{data, ObjectGroup, Tileset};
 use crate::debug::DebugDrawable;
 use crate::gfx::primitives::Quad;
 use crate::gfx::Texture;
-use imgui::{TextureId, Ui};
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -13,14 +12,14 @@ pub struct Tile {
     object_groups: Vec<ObjectGroup>,
     quad: Quad,
     texture: Texture,
-    debug_texture_id: Option<TextureId>,
+    //debug_texture_id: Option<TextureId>,
 }
 
 impl Tile {
     pub fn new(id: usize, quad: Quad, texture: Texture) -> Tile {
         Tile {
             object_groups: Vec::new(),
-            debug_texture_id: None,
+            //debug_texture_id: None,
             id,
             quad,
             texture,

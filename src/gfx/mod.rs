@@ -42,35 +42,13 @@ pub fn default_render_pipelines(device: &wgpu::Device) -> DefaultPipelines {
 fn default_textured_pipeline(
     device: &wgpu::Device,
 ) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_str!("../../assets/shader/textured.vert.glsl");
-    let fs_source = include_str!("../../assets/shader/textured.frag.glsl");
-
-    let mut compiler = shaderc::Compiler::new().expect("failed to create SPIR-V compiler");
-
-    let vs = compiler
-        .compile_into_spirv(
-            vs_source,
-            shaderc::ShaderKind::Vertex,
-            "default.vert.glsl",
-            "main",
-            None,
-        )
-        .expect("failed to compile vertex shader into SPIR-V");
-
-    let fs = compiler
-        .compile_into_spirv(
-            fs_source,
-            shaderc::ShaderKind::Fragment,
-            "default.frag.glsl",
-            "main",
-            None,
-        )
-        .expect("failed to compile fragment shader into SPIR-V");
+    let vs_source = include_bytes!("../../assets/shader/textured.vert.spv");
+    let fs_source = include_bytes!("../../assets/shader/textured.frag.spv");
 
     let vs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(vs.as_binary_u8())).unwrap());
+        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
     let fs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(fs.as_binary_u8())).unwrap());
+        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         bindings: &[
@@ -156,35 +134,13 @@ fn default_textured_pipeline(
 }
 
 fn default_flat_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_str!("../../assets/shader/flat.vert.glsl");
-    let fs_source = include_str!("../../assets/shader/flat.frag.glsl");
-
-    let mut compiler = shaderc::Compiler::new().expect("failed to create SPIR-V compiler");
-
-    let vs = compiler
-        .compile_into_spirv(
-            vs_source,
-            shaderc::ShaderKind::Vertex,
-            "flat.vert.glsl",
-            "main",
-            None,
-        )
-        .expect("failed to compile vertex shader into SPIR-V");
-
-    let fs = compiler
-        .compile_into_spirv(
-            fs_source,
-            shaderc::ShaderKind::Fragment,
-            "flat.frag.glsl",
-            "main",
-            None,
-        )
-        .expect("failed to compile fragment shader into SPIR-V");
+    let vs_source = include_bytes!("../../assets/shader/flat.vert.spv");
+    let fs_source = include_bytes!("../../assets/shader/flat.frag.spv");
 
     let vs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(vs.as_binary_u8())).unwrap());
+        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
     let fs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(fs.as_binary_u8())).unwrap());
+        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         bindings: &[wgpu::BindGroupLayoutBinding {
@@ -260,35 +216,13 @@ fn default_flat_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::
 }
 
 fn default_pixel_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_str!("../../assets/shader/pixel.vert.glsl");
-    let fs_source = include_str!("../../assets/shader/pixel.frag.glsl");
-
-    let mut compiler = shaderc::Compiler::new().expect("failed to create SPIR-V compiler");
-
-    let vs = compiler
-        .compile_into_spirv(
-            vs_source,
-            shaderc::ShaderKind::Vertex,
-            "pixel.vert.glsl",
-            "main",
-            None,
-        )
-        .expect("failed to compile vertex shader into SPIR-V");
-
-    let fs = compiler
-        .compile_into_spirv(
-            fs_source,
-            shaderc::ShaderKind::Fragment,
-            "pixel.frag.glsl",
-            "main",
-            None,
-        )
-        .expect("failed to compile fragment shader into SPIR-V");
+    let vs_source = include_bytes!("../../assets/shader/pixel.vert.spv");
+    let fs_source = include_bytes!("../../assets/shader/pixel.frag.spv");
 
     let vs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(vs.as_binary_u8())).unwrap());
+        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
     let fs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(fs.as_binary_u8())).unwrap());
+        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         bindings: &[
@@ -382,35 +316,13 @@ fn default_pixel_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu:
 }
 
 fn raycast_2d_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_str!("../../assets/shader/2draycast.vert.glsl");
-    let fs_source = include_str!("../../assets/shader/2draycast.frag.glsl");
-
-    let mut compiler = shaderc::Compiler::new().expect("failed to create SPIR-V compiler");
-
-    let vs = compiler
-        .compile_into_spirv(
-            vs_source,
-            shaderc::ShaderKind::Vertex,
-            "2draycast.vert.glsl",
-            "main",
-            None,
-        )
-        .expect("failed to compile vertex shader into SPIR-V");
-
-    let fs = compiler
-        .compile_into_spirv(
-            fs_source,
-            shaderc::ShaderKind::Fragment,
-            "2draycast.frag.glsl",
-            "main",
-            None,
-        )
-        .expect("failed to compile fragment shader into SPIR-V");
+    let vs_source = include_bytes!("../../assets/shader/2draycast.vert.spv");
+    let fs_source = include_bytes!("../../assets/shader/2draycast.frag.spv");
 
     let vs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(vs.as_binary_u8())).unwrap());
+        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
     let fs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(fs.as_binary_u8())).unwrap());
+        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         bindings: &[
