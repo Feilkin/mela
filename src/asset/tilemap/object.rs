@@ -1,10 +1,8 @@
 //! Tilemap objects
 
-use crate::assets::tilemap::data;
-use crate::assets::tilemap::data::DrawOrder;
+use crate::asset::tilemap::data;
+use crate::asset::tilemap::data::DrawOrder;
 use crate::debug::DebugDrawable;
-use imgui::Ui;
-use imgui_glium_renderer::Renderer;
 
 #[derive(Debug, Clone)]
 pub struct Object {
@@ -15,9 +13,7 @@ pub struct Object {
     pub height: f32,
 }
 
-impl DebugDrawable for Object {
-    fn draw_debug_ui(&mut self, ui: &Ui, _renderer: &mut Renderer) {}
-}
+impl DebugDrawable for Object {}
 
 impl From<data::Object> for Object {
     fn from(data: data::Object) -> Self {
@@ -44,9 +40,7 @@ impl ObjectGroup {
     }
 }
 
-impl DebugDrawable for ObjectGroup {
-    fn draw_debug_ui(&mut self, ui: &Ui, _renderer: &mut Renderer) {}
-}
+impl DebugDrawable for ObjectGroup {}
 
 impl From<data::ObjectGroup> for ObjectGroup {
     fn from(data: data::ObjectGroup) -> Self {

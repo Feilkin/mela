@@ -12,11 +12,12 @@ use crate::debug::DebugContext;
 use crate::game::Playable;
 use crate::gfx::{default_render_pipelines, RenderContext};
 use crate::profiler::Profiler;
-use std::time::Instant;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 use winit::dpi::PhysicalSize;
 
 pub struct Settings {
-    window_size: [f32; 2],
+    pub window_size: [f32; 2],
 }
 
 impl Default for Settings {
@@ -39,6 +40,18 @@ impl<G: 'static + Playable> Application<G> {
             game,
             title: title.into(),
             settings: Settings::default(),
+        }
+    }
+
+    pub fn new_with_settings<T: Into<String>>(
+        game: G,
+        title: T,
+        settings: Settings,
+    ) -> Application<G> {
+        Application {
+            game,
+            title: title.into(),
+            settings,
         }
     }
 
@@ -91,6 +104,7 @@ impl<G: 'static + Playable> Application<G> {
             *control_flow = ControlFlow::Poll;
 
             match event {
+                Event::LoopDestroyed => return,
                 Event::MainEventsCleared => window.request_redraw(),
                 Event::WindowEvent {
                     event: WindowEvent::Resized(size),
@@ -102,16 +116,18 @@ impl<G: 'static + Playable> Application<G> {
                 }
                 Event::RedrawRequested(_) => {
                     let frame = swap_chain.get_next_texture();
-                    let encoder =
+                    let update_encoder =
+                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { todo: 0 });
+                    let draw_encoder =
                         device.create_command_encoder(&wgpu::CommandEncoderDescriptor { todo: 0 });
 
                     let delta = last_update.elapsed();
                     last_update = Instant::now();
 
-                    let (frame, encoder) = {
+                    let (frame, update_buffer, draw_buffer) = {
                         let mut render_ctx = RenderContext {
-                            frame,
-                            encoder,
+                            frame: &frame.view,
+                            encoder: update_encoder,
                             device: &device,
                             pipelines: &render_pipelines,
                         };
@@ -121,14 +137,23 @@ impl<G: 'static + Playable> Application<G> {
                             game.update(delta, &mut render_ctx, &mut debug_ctx)
                         });
 
+                        let RenderContext { encoder, .. } = render_ctx;
+
+                        let update_buffer = encoder.finish();
+
+                        let mut render_ctx = RenderContext {
+                            encoder: draw_encoder,
+                            ..render_ctx
+                        };
+
                         game.redraw(&mut render_ctx, &mut debug_ctx);
 
                         let RenderContext { frame, encoder, .. } = render_ctx;
 
-                        (frame, encoder)
+                        (frame, update_buffer, encoder.finish())
                     };
 
-                    queue.submit(&[encoder.finish()])
+                    queue.submit(&[update_buffer, draw_buffer])
                 }
                 event @ _ => match game.push_event(&event) {
                     Some(flow) => *control_flow = flow,

@@ -2,7 +2,7 @@
 
 use zerocopy::{AsBytes, FromBytes};
 
-use crate::gfx::{Texture, RenderContext};
+use crate::gfx::{RenderContext, Texture};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, AsBytes, FromBytes)]
@@ -21,6 +21,7 @@ pub struct Vertex2D {
     pub color: [f32; 4],
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Quad {
     position: [f32; 2],
     size: [f32; 2],
@@ -69,21 +70,25 @@ impl Quad {
                 },
                 // top right
                 Vertex {
-                    position: [translation[0] + w, translation[1], z],
+                    position: [translation[0] + self.size[0], translation[1], z],
                     normal,
                     color,
                     texture_coords: [x1, y0],
                 },
                 // bottom left
                 Vertex {
-                    position: [translation[0], translation[1] + h, z],
+                    position: [translation[0], translation[1] + self.size[1], z],
                     normal,
                     color,
                     texture_coords: [x0, y1],
                 },
                 // bottom right
                 Vertex {
-                    position: [translation[0] + w, translation[1] + h, z],
+                    position: [
+                        translation[0] + self.size[0],
+                        translation[1] + self.size[1],
+                        z,
+                    ],
                     normal,
                     color,
                     texture_coords: [x1, y1],
@@ -119,19 +124,19 @@ impl Quad {
                 },
                 // top right
                 Vertex2D {
-                    position: [translation[0] + w, translation[1]],
+                    position: [translation[0] + self.size[0], translation[1]],
                     color,
                     texture_coords: [x1, y0],
                 },
                 // bottom left
                 Vertex2D {
-                    position: [translation[0], translation[1] + h],
+                    position: [translation[0], translation[1] + self.size[1]],
                     color,
                     texture_coords: [x0, y1],
                 },
                 // bottom right
                 Vertex2D {
-                    position: [translation[0] + w, translation[1] + h],
+                    position: [translation[0] + self.size[0], translation[1] + self.size[1]],
                     color,
                     texture_coords: [x1, y1],
                 },
@@ -152,7 +157,7 @@ impl Mesh2D {
         Mesh2D {
             vertices,
             indices,
-            texture
+            texture,
         }
     }
 

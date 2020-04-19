@@ -7,6 +7,7 @@ use winit::{event::Event, event_loop::ControlFlow};
 use crate::debug::DebugContext;
 use crate::gfx::RenderContext;
 use crate::profiler;
+use std::collections::HashMap;
 
 pub trait Playable: Sized {
     /// Advances this game to next state
@@ -29,4 +30,32 @@ pub trait Playable: Sized {
 pub struct IoState {
     pub mouse_position: [f32; 2],
     pub mouse_buttons: [bool; 3],
+    pub keys: HashMap<winit::event::ScanCode, bool>,
+    pub last_frame_keys: HashMap<winit::event::ScanCode, bool>,
+}
+
+impl IoState {
+    pub fn set_key(&mut self, key: winit::event::ScanCode, state: bool) {
+        self.keys.insert(key, state);
+    }
+
+    pub fn is_down(&self, key: winit::event::ScanCode) -> bool {
+        *self.keys.get(&key).unwrap_or(&false)
+    }
+
+    pub fn pressed(&self, key: winit::event::ScanCode) -> bool {
+        self.last_frame_keys
+            .get(&key)
+            .and_then(|last_state| {
+                let cur_state = self.keys.get(&key).unwrap_or(&false);
+                Some(*last_state == *cur_state)
+            })
+            .unwrap_or(false)
+    }
+
+    pub fn update(&mut self) {
+        let new_state_keys = self.keys.clone();
+        self.last_frame_keys = new_state_keys.clone();
+        self.keys = new_state_keys;
+    }
 }

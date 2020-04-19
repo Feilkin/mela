@@ -12,6 +12,8 @@ pub enum AssetState<T> {
 pub enum AssetError {
     IoError(std::io::Error),
     ImageError(image::ImageError),
+    SerdeXmlError(serde_xml_rs::Error),
+    SerdeJsonError(serde_json::Error),
 }
 
 impl From<std::io::Error> for AssetError {
@@ -23,6 +25,18 @@ impl From<std::io::Error> for AssetError {
 impl From<image::ImageError> for AssetError {
     fn from(err: image::ImageError) -> Self {
         AssetError::ImageError(err)
+    }
+}
+
+impl From<serde_xml_rs::Error> for AssetError {
+    fn from(err: serde_xml_rs::Error) -> Self {
+        AssetError::SerdeXmlError(err)
+    }
+}
+
+impl From<serde_json::Error> for AssetError {
+    fn from(err: serde_json::Error) -> Self {
+        AssetError::SerdeJsonError(err)
     }
 }
 
@@ -48,7 +62,7 @@ where
         self: Box<Self>,
         render_ctx: &mut RenderContext,
     ) -> Result<AssetState<Texture>, AssetError> {
-        let img = image::open(self.as_ref())?.to_rgba();
+        let img = image::open(self.as_ref())?.to_bgra();
         let img_dim = img.dimensions();
 
         let texture_extent = wgpu::Extent3d {

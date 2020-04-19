@@ -3,6 +3,8 @@
 use std::time::Duration;
 
 use crate::ecs::world::World;
+use crate::game::IoState;
+use crate::gfx::RenderContext;
 use crate::profiler;
 use crate::profiler::{OpenTagTree, Profiler};
 
@@ -12,6 +14,11 @@ pub trait System<W: World> {
         &mut self,
         delta: Duration,
         world: W,
-        profiler_tag: profiler::OpenTagTree<'f>,
-    ) -> (W, OpenTagTree<'f>);
+        io_state: &IoState,
+        render_ctx: &mut RenderContext, // TODO: fix profiler
+                                        //        profiler_tag: profiler::OpenTagTree<'f>
+    ) -> W;
+
+    fn draw(&self, render_ctx: &mut RenderContext) {}
+    fn draw_to(&self, view: &[&wgpu::TextureView], render_ctx: &mut RenderContext) {}
 }

@@ -1,8 +1,7 @@
 //! Data type definitions for import
 
-use crate::assets::tilemap::{layers, tileset};
-use crate::assets::AssetError;
-use crate::components::physics::{Body, Position};
+use crate::asset::tilemap::{layers, tileset};
+use crate::asset::AssetError;
 use crate::ecs::world::{World, WorldStorage};
 use serde::Deserialize;
 use std::convert::{TryFrom, TryInto};
@@ -18,11 +17,11 @@ pub struct Tileset {
     pub name: String,
     pub tilewidth: u32,
     pub tileheight: u32,
-    pub spacing: u32,
+    pub spacing: Option<u32>,
     pub tilecount: usize,
     pub columns: usize,
     pub image: Image,
-    pub tile: Vec<Tile>,
+    pub tile: Option<Vec<Tile>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,11 +31,11 @@ pub struct ExternalTileset {
     pub name: String,
     pub tilewidth: u32,
     pub tileheight: u32,
-    pub spacing: u32,
+    pub spacing: Option<u32>,
     pub tilecount: usize,
     pub columns: usize,
     pub image: Image,
-    pub tile: Vec<Tile>,
+    pub tile: Option<Vec<Tile>>,
 }
 
 impl ExternalTileset {
@@ -92,6 +91,7 @@ pub struct ObjectGroup {
 #[serde(rename_all = "lowercase")]
 pub enum DrawOrder {
     Index,
+    Topdown,
 }
 
 #[derive(Debug, Deserialize)]
@@ -230,16 +230,15 @@ pub enum PropertyValue {
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Layer {
     TileLayer(TileLayer),
+    ObjectGroup(ObjectLayer),
 }
 
 impl Layer {
-    pub fn into_actual<W: World + WorldStorage<Body> + WorldStorage<Position>>(
-        self,
-        tilesets: &[tileset::Tileset],
-    ) -> Box<dyn layers::Layer<W>> {
+    pub fn into_actual<W: World>(self, tilesets: &[tileset::Tileset]) -> Box<dyn layers::Layer<W>> {
         match self {
             Layer::TileLayer(layer_data) => Box::new(layer_data.build(tilesets)),
-            _ => unimplemented!(),
+            // TODO: implement object layers
+            Layer::ObjectGroup(layer_data) => Box::new(layer_data.build()),
         }
     }
 }
@@ -288,6 +287,29 @@ impl TileLayer {
             [self.offsetx as f32, self.offsety as f32],
             (self.width, self.height),
         )
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ObjectLayer {
+    draworder: DrawOrder,
+    id: usize,
+    name: String,
+    objects: Vec<Object>,
+    #[serde(default)]
+    offsetx: usize,
+    #[serde(default)]
+    offsety: usize,
+    #[serde(default)]
+    properties: Vec<Property>,
+    visible: bool,
+}
+
+impl ObjectLayer {
+    pub fn build(self) -> layers::ObjectLayer {
+        let objects = self.objects.into_iter().map(|obj| obj.into()).collect();
+
+        layers::ObjectLayer::new(objects, self.id, self.name)
     }
 }
 

@@ -8,17 +8,20 @@ edition = "2018"
 
 [dependencies]
 gltf = { version = "0.15.2", features = ["import"]}
+env_logger = "0.7.1"
 image = "0.23"
 imgui = "0.3.0"
 nalgebra = "0.20.0"
+ncollide2d = "0.22.0"
 nphysics3d = "0.14.0"
 replace_with = "0.1.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde-xml-rs = "0.4"
 shaderc = "0.6.2"
 winit = "0.22.0"
 wgpu = "0.4.0"
-zerocopy = "0.3"
+zerocopy = "0.2"
 
 [[example]]
 name="hello3d"
@@ -28,4 +31,9 @@ test=true
 [[example]]
 name="hello2d"
 path="examples/hello2d/main.rs"
+test=true
+
+[[example]]
+name="ld46"
+path="examples/ld46/main.rs"
 test=true

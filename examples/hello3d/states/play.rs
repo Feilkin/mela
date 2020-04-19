@@ -155,7 +155,7 @@ impl State for Play {
             .encoder
             .begin_render_pass(&wgpu::RenderPassDescriptor {
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &render_ctx.frame.view,
+                    attachment: &render_ctx.frame,
                     resolve_target: None,
                     load_op: wgpu::LoadOp::Clear,
                     store_op: wgpu::StoreOp::Store,

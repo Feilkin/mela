@@ -4,8 +4,8 @@ use mela::debug::{DebugContext, DebugDrawable};
 use mela::gfx::primitives::{Quad, Vertex, MVP};
 use mela::gfx::RenderContext;
 use mela::state::State;
-use std::time::Duration;
 use nalgebra::{Vector2, Vector3};
+use std::time::Duration;
 
 pub struct Play {
     assets: GameAssets,
@@ -32,7 +32,7 @@ impl Play {
             compare_function: wgpu::CompareFunction::Never,
         });
 
-        let projection = nalgebra::Matrix4::new_nonuniform_scaling(&Vector3::new(1., 16./9., 1.))
+        let projection = nalgebra::Matrix4::new_nonuniform_scaling(&Vector3::new(1., 16. / 9., 1.))
             .append_translation(&Vector3::new(-1., -1., 0.));
 
         let view = nalgebra::Matrix4::new_translation(&Vector3::new(0., 0., 0.));
@@ -66,9 +66,9 @@ impl Play {
                         binding: 2,
                         resource: wgpu::BindingResource::Buffer {
                             buffer: &transforms_buffer,
-                            range: 0..std::mem::size_of::<MVP>() as u64
-                        }
-                    }
+                            range: 0..std::mem::size_of::<MVP>() as u64,
+                        },
+                    },
                 ],
             });
 
@@ -97,7 +97,6 @@ impl State for Play {
 
         let (mut vertices, indices) = quad.vertices_and_indices2d([0., 0.], [1., 1., 1., 1.]);
 
-
         let vertex_buf = render_ctx
             .device
             .create_buffer_mapped(vertices.len(), wgpu::BufferUsage::VERTEX)
@@ -112,7 +111,7 @@ impl State for Play {
             .encoder
             .begin_render_pass(&wgpu::RenderPassDescriptor {
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &render_ctx.frame.view,
+                    attachment: &render_ctx.frame,
                     resolve_target: None,
                     load_op: wgpu::LoadOp::Clear,
                     store_op: wgpu::StoreOp::Store,

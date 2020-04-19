@@ -1,15 +1,11 @@
 //! Actual tilemap implementation lives here
 
-use crate::assets::tilemap::layers::Layer;
-use crate::assets::tilemap::{data, Tileset};
-use crate::assets::AssetError;
-use crate::components::physics::{Body, Position};
+use crate::asset::tilemap::layers::Layer;
+use crate::asset::tilemap::{data, Tileset};
+use crate::asset::AssetError;
 use crate::debug::DebugDrawable;
 use crate::ecs::world::{World, WorldStorage};
-use glium::Display;
-use imgui::Ui;
-use imgui_glium_renderer::Renderer;
-use itertools::Itertools;
+use crate::gfx::RenderContext;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
@@ -18,7 +14,7 @@ pub trait Orientation {
     fn from_data(data: &data::Map) -> Self;
 }
 
-pub struct Tilemap<O: Orientation, W: World + WorldStorage<Body>> {
+pub struct Tilemap<O: Orientation, W: World> {
     name: String,
     size: (usize, usize),
     tile_size: (usize, usize),
@@ -27,10 +23,10 @@ pub struct Tilemap<O: Orientation, W: World + WorldStorage<Body>> {
     orientation: O,
 }
 
-impl<O: Orientation, W: World + WorldStorage<Body> + WorldStorage<Position>> Tilemap<O, W> {
+impl<O: Orientation, W: World> Tilemap<O, W> {
     pub fn from_file<P: AsRef<Path>>(
         path: P,
-        display: &Display,
+        render_ctx: &mut RenderContext,
     ) -> Result<Tilemap<O, W>, AssetError> {
         let file = File::open(path.as_ref())?;
         let reader = BufReader::new(file);
@@ -42,14 +38,14 @@ impl<O: Orientation, W: World + WorldStorage<Body> + WorldStorage<Position>> Til
             .unwrap_or("unnamed".into())
             .into_owned();
 
-        Tilemap::from_data(data, name, path, display)
+        Tilemap::from_data(data, name, path, render_ctx)
     }
 
     pub fn from_data<P: AsRef<Path>>(
         data: data::Map,
         name: String,
         path: P,
-        display: &Display,
+        render_ctx: &mut RenderContext,
     ) -> Result<Tilemap<O, W>, AssetError> {
         let orientation = O::from_data(&data);
         let tilesets = data
@@ -58,7 +54,7 @@ impl<O: Orientation, W: World + WorldStorage<Body> + WorldStorage<Position>> Til
             .map(|inlined_or_external| {
                 inlined_or_external
                     .into_tileset(path.as_ref())
-                    .and_then(|data| Tileset::build(data, path.as_ref(), display))
+                    .and_then(|data| Tileset::build(data, path.as_ref(), render_ctx))
             })
             .collect::<Result<Vec<Tileset>, AssetError>>()?;
 
@@ -81,6 +77,10 @@ impl<O: Orientation, W: World + WorldStorage<Body> + WorldStorage<Position>> Til
     pub fn layers(&self) -> &[Box<dyn Layer<W>>] {
         &self.layers
     }
+
+    pub fn layers_mut(&mut self) -> &mut [Box<dyn Layer<W>>] {
+        &mut self.layers
+    }
 }
 
 // Tilemap orientations
@@ -102,35 +102,33 @@ impl Orientation for Orthogonal {
 }
 
 impl DebugDrawable for Orthogonal {
-    fn draw_debug_ui(&mut self, ui: &Ui, renderer: &mut Renderer) {
-        use imgui::*;
-
-        ui.text(im_str!("Orientation: orthogonal"));
-        ui.text(&im_str!("Render order: {:?}", self.render_order));
-    }
+    //    fn draw_debug_ui(&mut self, ui: &Ui, renderer: &mut Renderer) {
+    //        use imgui::*;
+    //
+    //        ui.text(im_str!("Orientation: orthogonal"));
+    //        ui.text(&im_str!("Render order: {:?}", self.render_order));
+    //    }
 }
 
-impl<O: Orientation + DebugDrawable, W: World + WorldStorage<Body>> DebugDrawable
-    for Tilemap<O, W>
-{
-    fn draw_debug_ui(&mut self, ui: &Ui, renderer: &mut Renderer) {
-        use imgui::*;
-
-        ui.text(&im_str!("width:       {}", self.size.0));
-        ui.text(&im_str!("height:      {}", self.size.1));
-        ui.text(&im_str!("tile width:  {}", self.tile_size.0));
-        ui.text(&im_str!("tile height: {}", self.tile_size.1));
-
-        self.orientation.draw_debug_ui(ui, renderer);
-
-        ui.tree_node(&im_str!("tilemap-{}-tilesets", self.name))
-            .label(im_str!("Tilesets"))
-            .build(|| {
-                for (index, tileset) in self.tilesets.iter_mut().enumerate() {
-                    ui.tree_node(&im_str!("tilemap-{}-tilesets-{}", self.name, index))
-                        .label(&im_str!("Tileset {}", index))
-                        .build(|| tileset.draw_debug_ui(ui, renderer));
-                }
-            });
-    }
+impl<O: Orientation + DebugDrawable, W: World> DebugDrawable for Tilemap<O, W> {
+    //    fn draw_debug_ui(&mut self, ui: &Ui, renderer: &mut Renderer) {
+    //        use imgui::*;
+    //
+    //        ui.text(&im_str!("width:       {}", self.size.0));
+    //        ui.text(&im_str!("height:      {}", self.size.1));
+    //        ui.text(&im_str!("tile width:  {}", self.tile_size.0));
+    //        ui.text(&im_str!("tile height: {}", self.tile_size.1));
+    //
+    //        self.orientation.draw_debug_ui(ui, renderer);
+    //
+    //        ui.tree_node(&im_str!("tilemap-{}-tilesets", self.name))
+    //            .label(im_str!("Tilesets"))
+    //            .build(|| {
+    //                for (index, tileset) in self.tilesets.iter_mut().enumerate() {
+    //                    ui.tree_node(&im_str!("tilemap-{}-tilesets-{}", self.name, index))
+    //                        .label(&im_str!("Tileset {}", index))
+    //                        .build(|| tileset.draw_debug_ui(ui, renderer));
+    //                }
+    //            });
+    //    }
 }

@@ -19,6 +19,7 @@ pub trait State: DebugDrawable {
     fn update(
         self,
         delta: Duration,
+        io_state: &IoState,
         render_ctx: &mut RenderContext,
         debug_ctx: &mut DebugContext,
     ) -> Self::Wrapper;
