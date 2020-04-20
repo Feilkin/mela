@@ -83,13 +83,7 @@ pub fn main() {
     env_logger::init();
 
     let game = Ld46Game::new();
-    let app = Application::new_with_settings(
-        game,
-        "Ludum Dare 46: Keep it alive",
-        Settings {
-            window_size: [768. * 2., 576. * 2.],
-        },
-    );
+    let app = Application::new(game, "WOODS: Keep it alive (LD46)");
 
     app.run();
 }

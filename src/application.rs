@@ -1,6 +1,7 @@
 //! I don't know :shrug:
 
 use replace_with::replace_with_or_abort;
+use serde::{Deserialize, Serialize};
 
 use winit::{
     event::{Event, WindowEvent},
@@ -11,10 +12,13 @@ use winit::{
 use crate::debug::DebugContext;
 use crate::game::Playable;
 use crate::gfx::{default_render_pipelines, RenderContext};
+use std::fs::File;
+use std::io::BufReader;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use winit::dpi::PhysicalSize;
 
+#[derive(Serialize, Deserialize)]
 pub struct Settings {
     pub window_size: [f32; 2],
 }
@@ -38,7 +42,16 @@ impl<G: 'static + Playable> Application<G> {
         Application {
             game,
             title: title.into(),
-            settings: Settings::default(),
+            settings: Application::<G>::load_settings(),
+        }
+    }
+
+    fn load_settings() -> Settings {
+        if let Ok(file) = File::open("settings.json") {
+            let reader = BufReader::new(file);
+            serde_json::from_reader(reader).expect("failed to load settings")
+        } else {
+            Settings::default()
         }
     }
 
