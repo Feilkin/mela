@@ -30,6 +30,7 @@ pub struct RenderContext<'s, 'p, 'd> {
     pub encoder: wgpu::CommandEncoder,
     pub device: &'d wgpu::Device,
     pub pipelines: &'p DefaultPipelines,
+    pub screen_size: (u32, u32),
 }
 
 pub struct DefaultPipelines {
@@ -215,7 +216,15 @@ fn default_flat_pipeline(
                 color_blend: wgpu::BlendDescriptor::REPLACE,
                 write_mask: wgpu::ColorWrite::ALL,
             }],
-            depth_stencil_state: None,
+            depth_stencil_state: Some(wgpu::DepthStencilStateDescriptor {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil_front: Default::default(),
+                stencil_back: Default::default(),
+                stencil_read_mask: 0,
+                stencil_write_mask: 0,
+            }),
             sample_count: 1,
             sample_mask: 0,
             alpha_to_coverage_enabled: false,

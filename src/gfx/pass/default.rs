@@ -10,6 +10,7 @@ pub struct Default {
     global_bind_group_layout: wgpu::BindGroupLayout,
     model_bind_group_layout: wgpu::BindGroupLayout,
     pipeline: wgpu::RenderPipeline,
+    depth_texture_view: wgpu::TextureView,
 }
 
 impl Default {
@@ -17,10 +18,26 @@ impl Default {
         let (pipeline, global_bind_group_layout, model_bind_group_layout) =
             default_flat_pipeline(render_ctx.device);
 
+        let depth_texture = render_ctx.device.create_texture(&wgpu::TextureDescriptor {
+            label: None,
+            size: wgpu::Extent3d {
+                width: render_ctx.screen_size.0,
+                height: render_ctx.screen_size.1,
+                depth: 1,
+            },
+            array_layer_count: 1,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Depth32Float,
+            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+        });
+
         Default {
             pipeline,
             global_bind_group_layout,
             model_bind_group_layout,
+            depth_texture_view: depth_texture.create_default_view(),
         }
     }
 
@@ -130,7 +147,15 @@ where
                     store_op: wgpu::StoreOp::Store,
                     clear_color: wgpu::Color::BLACK,
                 }],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
+                    attachment: &self.depth_texture_view,
+                    depth_load_op: wgpu::LoadOp::Clear,
+                    depth_store_op: wgpu::StoreOp::Store,
+                    clear_depth: 1.0,
+                    stencil_load_op: wgpu::LoadOp::Clear,
+                    stencil_store_op: wgpu::StoreOp::Store,
+                    clear_stencil: 0,
+                }),
             });
 
         rpass.set_pipeline(&self.pipeline);

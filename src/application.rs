@@ -124,6 +124,10 @@ impl<G: 'static + Playable> Application<G> {
 
         let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
+        let mut screen_size = (
+            self.settings.window_size[0] as u32,
+            self.settings.window_size[1] as u32,
+        );
         let mut game = self.game;
         let mut last_update = Instant::now();
         event_loop.run(move |event, _, control_flow| {
@@ -148,6 +152,7 @@ impl<G: 'static + Playable> Application<G> {
 
                         let (frame, update_buffer, draw_buffer) = {
                             let mut render_ctx = RenderContext {
+                                screen_size,
                                 frame: &frame.view,
                                 encoder: update_encoder,
                                 device: &device,
