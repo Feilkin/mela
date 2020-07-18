@@ -1,9 +1,11 @@
 //! glTF scene
 
+use std::path::Path;
+
+use gltf::Error;
+
 use crate::asset::{Asset, AssetError, AssetState};
 use crate::gfx::RenderContext;
-use gltf::Error;
-use std::path::Path;
 
 pub struct Scene {
     pub document: gltf::Document,

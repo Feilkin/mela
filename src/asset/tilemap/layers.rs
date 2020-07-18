@@ -1,16 +1,18 @@
 //! Tilemap layers
 
+use std::path::Path;
+use std::rc::Rc;
+
+use gltf::Mesh;
+use nalgebra::{Matrix, Matrix4, Vector2};
+use ncollide2d::shape::{Cuboid, ShapeHandle};
+use wgpu::TextureView;
+
 use crate::asset::tilemap::tile::Tile;
 use crate::asset::tilemap::Object;
 use crate::asset::{Asset, AssetState};
 use crate::ecs::world::{World, WorldStorage};
 use crate::gfx::{RenderContext, Spritebatch, Texture};
-use gltf::Mesh;
-use nalgebra::{Matrix, Matrix4, Vector2};
-use ncollide2d::shape::{Cuboid, ShapeHandle};
-use std::path::Path;
-use std::rc::Rc;
-use wgpu::TextureView;
 
 pub trait Layer<W: World> {
     fn update(&mut self, render_ctx: &mut RenderContext);

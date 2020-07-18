@@ -1,12 +1,12 @@
 //! here we go again
 
+use std::collections::HashMap;
 use std::time::Duration;
 
 use winit::{event::Event, event_loop::ControlFlow};
 
 use crate::debug::DebugContext;
 use crate::gfx::RenderContext;
-use std::collections::HashMap;
 
 pub trait Playable: Sized {
     /// Advances this game to next state

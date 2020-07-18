@@ -170,7 +170,6 @@ impl Mesh2D {
 #[derive(Debug, Clone, Copy, AsBytes, FromBytes)]
 #[repr(C)]
 pub struct MVP {
-    pub model: [[f32; 4]; 4],
     pub view: [[f32; 4]; 4],
     pub proj: [[f32; 4]; 4],
 }

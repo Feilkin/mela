@@ -1,10 +1,11 @@
 //! Tile
 
+use std::rc::Rc;
+
 use crate::asset::tilemap::{data, ObjectGroup, Tileset};
 use crate::debug::DebugDrawable;
 use crate::gfx::primitives::Quad;
 use crate::gfx::Texture;
-use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct Tile {

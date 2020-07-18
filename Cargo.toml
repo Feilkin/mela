@@ -10,17 +10,19 @@ edition = "2018"
 gltf = { version = "0.15.2", features = ["import"]}
 env_logger = "0.7.1"
 image = "0.23"
+futures = "0.3"
 #imgui = "0.3.0"
 nalgebra = "0.20.0"
 ncollide2d = "0.22.0"
 nphysics3d = "0.14.0"
+openxr = { version = "0.12.1", features = ["loaded"] }
 rand = "0.7.3"
 replace_with = "0.1.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde-xml-rs = "0.4"
 winit = "0.22.0"
-wgpu = "0.4.0"
+wgpu = "0.5"
 zerocopy = "0.2"
 
 [[example]]
@@ -37,3 +39,7 @@ test=true
 name="ld46"
 path="examples/ld46/main.rs"
 test=true
+
+#[[example]]
+#name="vr"
+#path="examples/vr/main.rs"

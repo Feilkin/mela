@@ -3,6 +3,7 @@ use image::load;
 use mela::asset::scene::Scene;
 use mela::asset::{Asset, AssetState};
 use mela::debug::{DebugContext, DebugDrawable};
+use mela::game::IoState;
 use mela::gfx::{RenderContext, Texture};
 use mela::state::State;
 use std::collections::HashMap;
@@ -25,7 +26,7 @@ impl Loading {
     pub fn new() -> Loading {
         Loading {
             remaining: RequiredGameAssets {
-                scene: Box::new("assets/models/monkey.gltf"),
+                scene: Box::new("assets/models/minigolf_course_test.gltf"),
             },
         }
     }
@@ -41,6 +42,7 @@ impl State for Loading {
     fn update(
         self,
         _delta: Duration,
+        _io_state: &IoState,
         render_ctx: &mut RenderContext,
         _debug_ctx: &mut DebugContext,
     ) -> Self::Wrapper {

@@ -1,8 +1,9 @@
 //! Efficient sprite batching
 
+use wgpu::{BindGroup, Buffer};
+
 use crate::gfx::primitives::{Quad, Vertex2D};
 use crate::gfx::{RenderContext, Texture};
-use wgpu::{BindGroup, Buffer};
 
 pub struct Spritebatch {
     texture: Texture,
@@ -50,6 +51,9 @@ impl Spritebatch {
     }
 
     fn update_buffer(&mut self, render_ctx: &mut RenderContext) {
+        // TODO: get rid of zerobytes
+        use zerocopy::AsBytes;
+
         // Create buffers if they don't exist yet.
         // TODO: Figure out how to properly reuse buffers.
         //       For now, we recreate them each frame.
@@ -57,13 +61,11 @@ impl Spritebatch {
 
         let vertex_buf = render_ctx
             .device
-            .create_buffer_mapped(self.vertices.len(), wgpu::BufferUsage::VERTEX)
-            .fill_from_slice(&self.vertices);
+            .create_buffer_with_data(&self.vertices.as_bytes(), wgpu::BufferUsage::VERTEX);
 
         let index_buf = render_ctx
             .device
-            .create_buffer_mapped(self.indices.len(), wgpu::BufferUsage::INDEX)
-            .fill_from_slice(&self.indices);
+            .create_buffer_with_data(&self.indices.as_bytes(), wgpu::BufferUsage::INDEX);
 
         self.buffer = Some((vertex_buf, index_buf));
 
@@ -72,6 +74,9 @@ impl Spritebatch {
     }
 
     fn setup_bind_group(&mut self, render_ctx: &mut RenderContext) {
+        // TODO: get rid of zerobytes
+        use zerocopy::AsBytes;
+
         let texture_view = self.texture.create_default_view();
 
         let sampler = render_ctx.device.create_sampler(&wgpu::SamplerDescriptor {
@@ -83,7 +88,7 @@ impl Spritebatch {
             mipmap_filter: Default::default(),
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
-            compare_function: wgpu::CompareFunction::Never,
+            compare: wgpu::CompareFunction::Never,
         });
 
         let transformations: [[f32; 4]; 4] = nalgebra::Matrix4::new_nonuniform_scaling(
@@ -95,8 +100,7 @@ impl Spritebatch {
 
         let transforms_buffer = render_ctx
             .device
-            .create_buffer_mapped(1, wgpu::BufferUsage::UNIFORM)
-            .fill_from_slice(&[transformations]);
+            .create_buffer_with_data(transformations.as_bytes(), wgpu::BufferUsage::UNIFORM);
 
         self.bind_group = Some((
             render_ctx
@@ -120,6 +124,7 @@ impl Spritebatch {
                             },
                         },
                     ],
+                    label: None,
                 }),
             transforms_buffer,
         ));
@@ -171,8 +176,8 @@ impl Spritebatch {
 
         rpass.set_pipeline(&render_ctx.pipelines.pixel.0);
         rpass.set_bind_group(0, bind_group, &[]);
-        rpass.set_index_buffer(index_buf, 0);
-        rpass.set_vertex_buffers(0, &[(vertex_buf, 0)]);
+        rpass.set_index_buffer(index_buf, 0, 0);
+        rpass.set_vertex_buffer(0, &vertex_buf, 0, 0);
         rpass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
     }
 
@@ -217,8 +222,8 @@ impl Spritebatch {
 
         rpass.set_pipeline(&render_ctx.pipelines.pixel.0);
         rpass.set_bind_group(0, bind_group, &[]);
-        rpass.set_index_buffer(index_buf, 0);
-        rpass.set_vertex_buffers(0, &[(vertex_buf, 0)]);
+        rpass.set_index_buffer(index_buf, 0, 0);
+        rpass.set_vertex_buffer(0, &vertex_buf, 0, 0);
         rpass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
     }
 }

@@ -1,16 +1,25 @@
 //! Graphics stuff
 
-use crate::gfx::primitives::{Vertex, Vertex2D};
 use std::mem;
 use std::rc::Rc;
-use wgpu::ShaderModule;
+
+use wgpu::{ShaderModule, TextureComponentType, VertexStateDescriptor};
+
+pub use spritebatch::Spritebatch;
+
+use crate::gfx::primitives::{Vertex, Vertex2D};
 
 pub mod light;
+mod mesh;
+pub mod pass;
 pub mod primitives;
+mod scene;
 
 mod spritebatch;
 
-pub use spritebatch::Spritebatch;
+// re-exports
+pub use mesh::Mesh;
+pub use scene::{DefaultScene, Scene};
 
 /// Type alias over reference counted wgpu texture
 pub type Texture = Rc<wgpu::Texture>;
@@ -25,7 +34,11 @@ pub struct RenderContext<'s, 'p, 'd> {
 
 pub struct DefaultPipelines {
     pub textured: (wgpu::RenderPipeline, wgpu::BindGroupLayout),
-    pub flat: (wgpu::RenderPipeline, wgpu::BindGroupLayout),
+    pub flat: (
+        wgpu::RenderPipeline,
+        wgpu::BindGroupLayout,
+        wgpu::BindGroupLayout,
+    ),
     pub pixel: (wgpu::RenderPipeline, wgpu::BindGroupLayout),
     pub raycast2d: (wgpu::RenderPipeline, wgpu::BindGroupLayout),
 }
@@ -52,20 +65,22 @@ fn default_textured_pipeline(
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         bindings: &[
-            wgpu::BindGroupLayoutBinding {
+            wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::SampledTexture {
                     multisampled: false,
                     dimension: wgpu::TextureViewDimension::D2,
+                    component_type: TextureComponentType::Float,
                 },
             },
-            wgpu::BindGroupLayoutBinding {
+            wgpu::BindGroupLayoutEntry {
                 binding: 1,
                 visibility: wgpu::ShaderStage::FRAGMENT,
-                ty: wgpu::BindingType::Sampler,
+                ty: wgpu::BindingType::Sampler { comparison: false },
             },
         ],
+        label: None,
     });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -98,42 +113,51 @@ fn default_textured_pipeline(
                 write_mask: wgpu::ColorWrite::ALL,
             }],
             depth_stencil_state: None,
-            index_format: wgpu::IndexFormat::Uint16,
-            vertex_buffers: &[wgpu::VertexBufferDescriptor {
-                stride: mem::size_of::<Vertex>() as u64,
-                step_mode: wgpu::InputStepMode::Vertex,
-                attributes: &[
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 0,
-                        format: wgpu::VertexFormat::Float3,
-                        shader_location: 0,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 3 * 4,
-                        format: wgpu::VertexFormat::Float3,
-                        shader_location: 1,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 3 * 4 + 3 * 4,
-                        format: wgpu::VertexFormat::Float2,
-                        shader_location: 2,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 4 * 4 + 3 * 4 + 2 * 4,
-                        format: wgpu::VertexFormat::Float4,
-                        shader_location: 3,
-                    },
-                ],
-            }],
+
             sample_count: 1,
             sample_mask: 0,
             alpha_to_coverage_enabled: false,
+            vertex_state: VertexStateDescriptor {
+                index_format: wgpu::IndexFormat::Uint16,
+                vertex_buffers: &[wgpu::VertexBufferDescriptor {
+                    stride: mem::size_of::<Vertex>() as u64,
+                    step_mode: wgpu::InputStepMode::Vertex,
+                    attributes: &[
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 0,
+                            format: wgpu::VertexFormat::Float3,
+                            shader_location: 0,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 3 * 4,
+                            format: wgpu::VertexFormat::Float3,
+                            shader_location: 1,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 3 * 4 + 3 * 4,
+                            format: wgpu::VertexFormat::Float2,
+                            shader_location: 2,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 4 * 4 + 3 * 4 + 2 * 4,
+                            format: wgpu::VertexFormat::Float4,
+                            shader_location: 3,
+                        },
+                    ],
+                }],
+            },
         }),
         bind_group_layout,
     )
 }
 
-fn default_flat_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
+fn default_flat_pipeline(
+    device: &wgpu::Device,
+) -> (
+    wgpu::RenderPipeline,
+    wgpu::BindGroupLayout,
+    wgpu::BindGroupLayout,
+) {
     let vs_source = include_bytes!("../../assets/shader/flat.vert.spv");
     let fs_source = include_bytes!("../../assets/shader/flat.frag.spv");
 
@@ -142,16 +166,28 @@ fn default_flat_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::
     let fs_module = device
         .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
 
-    let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        bindings: &[wgpu::BindGroupLayoutBinding {
-            binding: 0,
-            visibility: wgpu::ShaderStage::VERTEX,
-            ty: wgpu::BindingType::UniformBuffer { dynamic: false },
-        }],
-    });
+    let global_bind_group_layout =
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            bindings: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStage::VERTEX,
+                ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+            }],
+            label: None,
+        });
+
+    let model_bind_group_layout =
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            bindings: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStage::VERTEX,
+                ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+            }],
+            label: None,
+        });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        bind_group_layouts: &[&bind_group_layout],
+        bind_group_layouts: &[&global_bind_group_layout, &model_bind_group_layout],
     });
 
     (
@@ -180,38 +216,44 @@ fn default_flat_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::
                 write_mask: wgpu::ColorWrite::ALL,
             }],
             depth_stencil_state: None,
-            index_format: wgpu::IndexFormat::Uint16,
-            vertex_buffers: &[wgpu::VertexBufferDescriptor {
-                stride: mem::size_of::<Vertex>() as u64,
-                step_mode: wgpu::InputStepMode::Vertex,
-                attributes: &[
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 0,
-                        format: wgpu::VertexFormat::Float3,
-                        shader_location: 0,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 3 * 4,
-                        format: wgpu::VertexFormat::Float3,
-                        shader_location: 1,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 3 * 4 + 3 * 4,
-                        format: wgpu::VertexFormat::Float2,
-                        shader_location: 2,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 4 * 4 + 3 * 4 + 2 * 4,
-                        format: wgpu::VertexFormat::Float4,
-                        shader_location: 3,
-                    },
-                ],
-            }],
             sample_count: 1,
             sample_mask: 0,
             alpha_to_coverage_enabled: false,
+            vertex_state: VertexStateDescriptor {
+                index_format: wgpu::IndexFormat::Uint16,
+                vertex_buffers: &[
+                    wgpu::VertexBufferDescriptor {
+                        stride: 3 * 4,
+                        step_mode: wgpu::InputStepMode::Vertex,
+                        attributes: &[wgpu::VertexAttributeDescriptor {
+                            offset: 0,
+                            format: wgpu::VertexFormat::Float3,
+                            shader_location: 0,
+                        }],
+                    },
+                    wgpu::VertexBufferDescriptor {
+                        stride: 3 * 4,
+                        step_mode: wgpu::InputStepMode::Vertex,
+                        attributes: &[wgpu::VertexAttributeDescriptor {
+                            offset: 0,
+                            format: wgpu::VertexFormat::Float3,
+                            shader_location: 1,
+                        }],
+                    },
+                    wgpu::VertexBufferDescriptor {
+                        stride: 2 * 4,
+                        step_mode: wgpu::InputStepMode::Vertex,
+                        attributes: &[wgpu::VertexAttributeDescriptor {
+                            offset: 0,
+                            format: wgpu::VertexFormat::Float2,
+                            shader_location: 2,
+                        }],
+                    },
+                ],
+            },
         }),
-        bind_group_layout,
+        global_bind_group_layout,
+        model_bind_group_layout,
     )
 }
 
@@ -226,25 +268,27 @@ fn default_pixel_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu:
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         bindings: &[
-            wgpu::BindGroupLayoutBinding {
+            wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::SampledTexture {
                     multisampled: false,
                     dimension: wgpu::TextureViewDimension::D2,
+                    component_type: TextureComponentType::Float,
                 },
             },
-            wgpu::BindGroupLayoutBinding {
+            wgpu::BindGroupLayoutEntry {
                 binding: 1,
                 visibility: wgpu::ShaderStage::FRAGMENT,
-                ty: wgpu::BindingType::Sampler,
+                ty: wgpu::BindingType::Sampler { comparison: false },
             },
-            wgpu::BindGroupLayoutBinding {
+            wgpu::BindGroupLayoutEntry {
                 binding: 2,
                 visibility: wgpu::ShaderStage::VERTEX,
                 ty: wgpu::BindingType::UniformBuffer { dynamic: false },
             },
         ],
+        label: None,
     });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -285,31 +329,33 @@ fn default_pixel_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu:
                 write_mask: wgpu::ColorWrite::ALL,
             }],
             depth_stencil_state: None,
-            index_format: wgpu::IndexFormat::Uint16,
-            vertex_buffers: &[wgpu::VertexBufferDescriptor {
-                stride: mem::size_of::<Vertex2D>() as u64,
-                step_mode: wgpu::InputStepMode::Vertex,
-                attributes: &[
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 0,
-                        format: wgpu::VertexFormat::Float2,
-                        shader_location: 0,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 2 * 4,
-                        format: wgpu::VertexFormat::Float2,
-                        shader_location: 1,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 2 * 4 + 2 * 4,
-                        format: wgpu::VertexFormat::Float4,
-                        shader_location: 2,
-                    },
-                ],
-            }],
             sample_count: 1,
             sample_mask: 0,
             alpha_to_coverage_enabled: false,
+            vertex_state: VertexStateDescriptor {
+                index_format: wgpu::IndexFormat::Uint16,
+                vertex_buffers: &[wgpu::VertexBufferDescriptor {
+                    stride: mem::size_of::<Vertex2D>() as u64,
+                    step_mode: wgpu::InputStepMode::Vertex,
+                    attributes: &[
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 0,
+                            format: wgpu::VertexFormat::Float2,
+                            shader_location: 0,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 2 * 4,
+                            format: wgpu::VertexFormat::Float2,
+                            shader_location: 1,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 2 * 4 + 2 * 4,
+                            format: wgpu::VertexFormat::Float4,
+                            shader_location: 2,
+                        },
+                    ],
+                }],
+            },
         }),
         bind_group_layout,
     )
@@ -326,33 +372,36 @@ fn raycast_2d_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::Bi
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         bindings: &[
-            wgpu::BindGroupLayoutBinding {
+            wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::SampledTexture {
                     multisampled: false,
                     dimension: wgpu::TextureViewDimension::D2,
+                    component_type: TextureComponentType::Float,
                 },
             },
-            wgpu::BindGroupLayoutBinding {
+            wgpu::BindGroupLayoutEntry {
                 binding: 1,
                 visibility: wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::SampledTexture {
                     multisampled: false,
                     dimension: wgpu::TextureViewDimension::D2,
+                    component_type: TextureComponentType::Float,
                 },
             },
-            wgpu::BindGroupLayoutBinding {
+            wgpu::BindGroupLayoutEntry {
                 binding: 2,
                 visibility: wgpu::ShaderStage::FRAGMENT,
-                ty: wgpu::BindingType::Sampler,
+                ty: wgpu::BindingType::Sampler { comparison: false },
             },
-            wgpu::BindGroupLayoutBinding {
+            wgpu::BindGroupLayoutEntry {
                 binding: 3,
                 visibility: wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::UniformBuffer { dynamic: false },
             },
         ],
+        label: None,
     });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -385,31 +434,33 @@ fn raycast_2d_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::Bi
                 write_mask: wgpu::ColorWrite::ALL,
             }],
             depth_stencil_state: None,
-            index_format: wgpu::IndexFormat::Uint16,
-            vertex_buffers: &[wgpu::VertexBufferDescriptor {
-                stride: mem::size_of::<Vertex2D>() as u64,
-                step_mode: wgpu::InputStepMode::Vertex,
-                attributes: &[
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 0,
-                        format: wgpu::VertexFormat::Float2,
-                        shader_location: 0,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 2 * 4,
-                        format: wgpu::VertexFormat::Float2,
-                        shader_location: 1,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 2 * 4 + 2 * 4,
-                        format: wgpu::VertexFormat::Float4,
-                        shader_location: 2,
-                    },
-                ],
-            }],
             sample_count: 1,
             sample_mask: 0,
             alpha_to_coverage_enabled: false,
+            vertex_state: VertexStateDescriptor {
+                index_format: wgpu::IndexFormat::Uint16,
+                vertex_buffers: &[wgpu::VertexBufferDescriptor {
+                    stride: mem::size_of::<Vertex2D>() as u64,
+                    step_mode: wgpu::InputStepMode::Vertex,
+                    attributes: &[
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 0,
+                            format: wgpu::VertexFormat::Float2,
+                            shader_location: 0,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 2 * 4,
+                            format: wgpu::VertexFormat::Float2,
+                            shader_location: 1,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 2 * 4 + 2 * 4,
+                            format: wgpu::VertexFormat::Float4,
+                            shader_location: 2,
+                        },
+                    ],
+                }],
+            },
         }),
         bind_group_layout,
     )

@@ -1,9 +1,8 @@
 //! imgui based frame profiler and stuff
 
+use imgui::Ui;
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
-
-use imgui::Ui;
 
 pub trait PushTag: Sized {
     type Child: PopTag;

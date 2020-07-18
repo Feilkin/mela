@@ -1,14 +1,15 @@
 //! Actual tilemap implementation lives here
 
+use std::fs::File;
+use std::io::BufReader;
+use std::path::Path;
+
 use crate::asset::tilemap::layers::Layer;
 use crate::asset::tilemap::{data, Tileset};
 use crate::asset::AssetError;
 use crate::debug::DebugDrawable;
 use crate::ecs::world::{World, WorldStorage};
 use crate::gfx::RenderContext;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
 
 pub trait Orientation {
     fn from_data(data: &data::Map) -> Self;

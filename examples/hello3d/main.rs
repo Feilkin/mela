@@ -3,7 +3,7 @@
 use crate::states::States;
 use mela::application::Application;
 use mela::debug::DebugContext;
-use mela::game::Playable;
+use mela::game::{IoState, Playable};
 use mela::gfx::RenderContext;
 use mela::state::State;
 use std::time::Duration;
@@ -14,12 +14,14 @@ mod states;
 
 struct Hello3dGame {
     state: States,
+    io_state: IoState,
 }
 
 impl Hello3dGame {
     pub fn new() -> Hello3dGame {
         Hello3dGame {
             state: States::new(),
+            io_state: IoState::default(),
         }
     }
 }
@@ -31,11 +33,19 @@ impl Playable for Hello3dGame {
         render_ctx: &mut RenderContext,
         debug_ctx: &mut DebugContext,
     ) -> Self {
-        let Hello3dGame { state } = self;
+        let Hello3dGame {
+            state,
+            mut io_state,
+        } = self;
 
-        let new_state = state.update(delta, render_ctx, debug_ctx);
+        io_state.update();
 
-        Hello3dGame { state: new_state }
+        let new_state = state.update(delta, &io_state, render_ctx, debug_ctx);
+
+        Hello3dGame {
+            state: new_state,
+            io_state,
+        }
     }
 
     fn push_event<T>(&mut self, event: &Event<T>) -> Option<ControlFlow> {

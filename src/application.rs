@@ -1,8 +1,14 @@
 //! I don't know :shrug:
 
+use std::fs::File;
+use std::io::BufReader;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
+
+use futures::executor::block_on;
 use replace_with::replace_with_or_abort;
 use serde::{Deserialize, Serialize};
-
+use winit::dpi::PhysicalSize;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -12,11 +18,6 @@ use winit::{
 use crate::debug::DebugContext;
 use crate::game::Playable;
 use crate::gfx::{default_render_pipelines, RenderContext};
-use std::fs::File;
-use std::io::BufReader;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
-use winit::dpi::PhysicalSize;
 
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
@@ -35,6 +36,16 @@ pub struct Application<G: 'static + Playable> {
     title: String,
     game: G,
     settings: Settings,
+}
+
+trait A {}
+trait B {}
+
+impl A for () {}
+impl B for () {}
+
+fn test() -> impl A + B {
+    ()
 }
 
 impl<G: 'static + Playable> Application<G> {
@@ -85,18 +96,21 @@ impl<G: 'static + Playable> Application<G> {
 
         let surface = wgpu::Surface::create(&window);
 
-        let adapter = wgpu::Adapter::request(&wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            backends: wgpu::BackendBit::PRIMARY,
-        })
+        let adapter = block_on(wgpu::Adapter::request(
+            &wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                compatible_surface: None,
+            },
+            wgpu::BackendBit::PRIMARY,
+        ))
         .unwrap();
 
-        let (device, mut queue) = adapter.request_device(&wgpu::DeviceDescriptor {
+        let (device, mut queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
             extensions: wgpu::Extensions {
                 anisotropic_filtering: false,
             },
             limits: wgpu::Limits::default(),
-        });
+        }));
 
         let render_pipelines = default_render_pipelines(&device);
 
@@ -105,7 +119,7 @@ impl<G: 'static + Playable> Application<G> {
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
-            present_mode: wgpu::PresentMode::Vsync,
+            present_mode: wgpu::PresentMode::Mailbox,
         };
 
         let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
@@ -119,45 +133,50 @@ impl<G: 'static + Playable> Application<G> {
                 Event::LoopDestroyed => return,
                 Event::MainEventsCleared => window.request_redraw(),
                 Event::RedrawRequested(_) => {
-                    let frame = swap_chain.get_next_texture();
-                    let update_encoder =
-                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { todo: 0 });
-                    let draw_encoder =
-                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { todo: 0 });
+                    if let Ok(frame) = swap_chain.get_next_texture() {
+                        let update_encoder =
+                            device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                                label: None,
+                            });
+                        let draw_encoder =
+                            device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                                label: None,
+                            });
 
-                    let delta = last_update.elapsed();
-                    last_update = Instant::now();
+                        let delta = last_update.elapsed();
+                        last_update = Instant::now();
 
-                    let (frame, update_buffer, draw_buffer) = {
-                        let mut render_ctx = RenderContext {
-                            frame: &frame.view,
-                            encoder: update_encoder,
-                            device: &device,
-                            pipelines: &render_pipelines,
+                        let (frame, update_buffer, draw_buffer) = {
+                            let mut render_ctx = RenderContext {
+                                frame: &frame.view,
+                                encoder: update_encoder,
+                                device: &device,
+                                pipelines: &render_pipelines,
+                            };
+                            let mut debug_ctx = DebugContext {};
+
+                            replace_with_or_abort(&mut game, |game| {
+                                game.update(delta, &mut render_ctx, &mut debug_ctx)
+                            });
+
+                            let RenderContext { encoder, .. } = render_ctx;
+
+                            let update_buffer = encoder.finish();
+
+                            let mut render_ctx = RenderContext {
+                                encoder: draw_encoder,
+                                ..render_ctx
+                            };
+
+                            game.redraw(&mut render_ctx, &mut debug_ctx);
+
+                            let RenderContext { frame, encoder, .. } = render_ctx;
+
+                            (frame, update_buffer, encoder.finish())
                         };
-                        let mut debug_ctx = DebugContext {};
 
-                        replace_with_or_abort(&mut game, |game| {
-                            game.update(delta, &mut render_ctx, &mut debug_ctx)
-                        });
-
-                        let RenderContext { encoder, .. } = render_ctx;
-
-                        let update_buffer = encoder.finish();
-
-                        let mut render_ctx = RenderContext {
-                            encoder: draw_encoder,
-                            ..render_ctx
-                        };
-
-                        game.redraw(&mut render_ctx, &mut debug_ctx);
-
-                        let RenderContext { frame, encoder, .. } = render_ctx;
-
-                        (frame, update_buffer, encoder.finish())
-                    };
-
-                    queue.submit(&[update_buffer, draw_buffer])
+                        queue.submit(&[update_buffer, draw_buffer])
+                    }
                 }
                 event @ _ => match game.push_event(&event) {
                     Some(flow) => *control_flow = flow,

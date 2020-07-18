@@ -1,5 +1,17 @@
 //! Loadable stuff
 
+use std::fs::File;
+use std::io::Error;
+use std::path::Path;
+use std::rc::Rc;
+
+use image::DynamicImage;
+
+// Example Asset implementation
+// TODO: move to crates when done.
+use crate::gfx::{RenderContext, Texture};
+use wgpu::BufferDescriptor;
+
 pub mod scene;
 pub mod tilemap;
 
@@ -48,15 +60,6 @@ pub trait Asset<T> {
     fn poll(self: Box<Self>, render_ctx: &mut RenderContext) -> Result<AssetState<T>, AssetError>;
 }
 
-// Example Asset implementation
-// TODO: move to crates when done.
-use crate::gfx::{RenderContext, Texture};
-use image::DynamicImage;
-use std::fs::File;
-use std::io::Error;
-use std::path::Path;
-use std::rc::Rc;
-
 impl<T> Asset<Texture> for T
 where
     T: AsRef<Path>,
@@ -75,6 +78,7 @@ where
         };
 
         let texture = render_ctx.device.create_texture(&wgpu::TextureDescriptor {
+            label: None,
             size: texture_extent,
             array_layer_count: 1,
             mip_level_count: 1,
@@ -87,15 +91,14 @@ where
         // upload image data to texture
         let temp_buf = render_ctx
             .device
-            .create_buffer_mapped(img.len(), wgpu::BufferUsage::COPY_SRC)
-            .fill_from_slice(&img);
+            .create_buffer_with_data(&img.into_raw(), wgpu::BufferUsage::COPY_SRC);
 
         render_ctx.encoder.copy_buffer_to_texture(
             wgpu::BufferCopyView {
                 buffer: &temp_buf,
                 offset: 0,
-                row_pitch: img_dim.0 * 4,
-                image_height: 0,
+                bytes_per_row: img_dim.0 * 4,
+                rows_per_image: 0,
             },
             wgpu::TextureCopyView {
                 texture: &texture,
@@ -125,6 +128,7 @@ impl Asset<Texture> for Bytes {
         };
 
         let texture = render_ctx.device.create_texture(&wgpu::TextureDescriptor {
+            label: None,
             size: texture_extent,
             array_layer_count: 1,
             mip_level_count: 1,
@@ -137,15 +141,14 @@ impl Asset<Texture> for Bytes {
         // upload image data to texture
         let temp_buf = render_ctx
             .device
-            .create_buffer_mapped(img.len(), wgpu::BufferUsage::COPY_SRC)
-            .fill_from_slice(&img);
+            .create_buffer_with_data(&img.into_raw(), wgpu::BufferUsage::COPY_SRC);
 
         render_ctx.encoder.copy_buffer_to_texture(
             wgpu::BufferCopyView {
                 buffer: &temp_buf,
                 offset: 0,
-                row_pitch: img_dim.0 * 4,
-                image_height: 0,
+                bytes_per_row: img_dim.0 * 4,
+                rows_per_image: 0,
             },
             wgpu::TextureCopyView {
                 texture: &texture,

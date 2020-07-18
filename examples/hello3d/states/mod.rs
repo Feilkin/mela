@@ -5,6 +5,7 @@ pub use loading::Loading;
 pub use play::Play;
 
 use mela::debug::{DebugContext, DebugDrawable};
+use mela::game::IoState;
 use mela::gfx::RenderContext;
 use mela::state::State;
 use std::time::Duration;
@@ -33,12 +34,13 @@ impl State for States {
     fn update(
         self,
         delta: Duration,
+        io_state: &IoState,
         render_ctx: &mut RenderContext,
         debug_ctx: &mut DebugContext,
     ) -> Self::Wrapper {
         match self {
-            States::Loading(s) => s.update(delta, render_ctx, debug_ctx),
-            States::Play(s) => s.update(delta, render_ctx, debug_ctx),
+            States::Loading(s) => s.update(delta, io_state, render_ctx, debug_ctx),
+            States::Play(s) => s.update(delta, io_state, render_ctx, debug_ctx),
         }
     }
 
