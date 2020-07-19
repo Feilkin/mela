@@ -14,9 +14,13 @@ pub use system::System;
 use crate::ecs::entity::EntityBuilder;
 use crate::ecs::world::World;
 
+pub mod component;
 pub mod entity;
+mod event;
 pub mod system;
 pub mod world;
+
+pub use event::Event;
 
 /// An interface for component storages. See `VecStorage` for example implementation
 pub trait ComponentStorage<C: Component> {
@@ -24,7 +28,9 @@ pub trait ComponentStorage<C: Component> {
     type Writer<'w>: WriteAccess<'w, C>;
 
     /// returns slice of components, indexed by entity
-    fn read<'r, 'd: 'r>(&'d self) -> Self::Reader<'r>;
+    fn read<'r, 'd: 'r>(&'d self) -> Self::Reader<'r>
+    where
+        Self::Reader<'r>: ReadAccess<'r, C>;
 
     /// writes new component value for entity
     fn write<'w, 'd: 'w>(&'d mut self) -> Self::Writer<'w>;
@@ -34,11 +40,12 @@ pub trait ComponentStorage<C: Component> {
 pub trait Component: Sized + Send + Sync {}
 
 /// An interface that describes read access to a Component
-pub trait ReadAccess<'r, C: Component> {
+pub trait ReadAccess<'access, C: Component> {
     fn fetch(&self, entity: Entity) -> Option<&C>;
-    fn iter<'a>(&'r self) -> Box<dyn Iterator<Item = (Entity, &'a C)> + 'a>
+    fn iter<'borrow, 's>(&'s self) -> Box<dyn Iterator<Item = (Entity, &'borrow C)> + 'borrow>
     where
-        'r: 'a;
+        's: 'borrow,
+        'access: 's;
 }
 
 /// An interface that describes write access to a Component
@@ -99,9 +106,10 @@ impl<'v: 'r, 'r, C: 'v + Component> ReadAccess<'r, C> for VecReader<'v, C> {
         self.data.get(usize::from(entity)).unwrap_or(&None).as_ref()
     }
 
-    fn iter<'a>(&'r self) -> Box<dyn Iterator<Item = (Entity, &'a C)> + 'a>
+    fn iter<'a, 's>(&'s self) -> Box<dyn Iterator<Item = (Entity, &'a C)> + 'a>
     where
-        'r: 'a,
+        's: 'a,
+        'r: 's,
     {
         Box::new(
             self.data
@@ -177,9 +185,10 @@ impl<'v: 'w, 'w, C: Component> ReadAccess<'w, C> for VecWriter<'v, C> {
         self.data.get(usize::from(entity)).unwrap_or(&None).as_ref()
     }
 
-    fn iter<'a>(&'w self) -> Box<dyn Iterator<Item = (Entity, &'a C)> + 'a>
+    fn iter<'a, 's>(&'s self) -> Box<dyn Iterator<Item = (Entity, &'a C)> + 'a>
     where
-        'w: 'a,
+        's: 'a,
+        'w: 's,
     {
         Box::new(
             self.data
@@ -256,9 +265,10 @@ impl<'d: 'r, 'r, C: 'd + Component> ReadAccess<'r, C> for DequeReader<'d, C> {
         None
     }
 
-    fn iter<'a>(&'r self) -> Box<dyn Iterator<Item = (Entity, &'a C)> + 'a>
+    fn iter<'a, 's>(&'s self) -> Box<dyn Iterator<Item = (Entity, &'a C)> + 'a>
     where
-        'r: 'a,
+        's: 'a,
+        'r: 's,
     {
         Box::new(self.data.iter().map(|(e, c)| (e.clone(), c)))
     }

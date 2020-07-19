@@ -14,6 +14,6 @@ pub trait World: Sized {
 pub trait WorldStorage<C: Component>: World {
     type Storage: ComponentStorage<C>;
 
-    fn storage(&self) -> &Self::Storage;
-    fn mut_storage(&mut self) -> &mut Self::Storage;
+    fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage;
+    fn mut_storage<'s, 'w: 's>(&'w self) -> &'s mut Self::Storage;
 }
