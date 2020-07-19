@@ -1,5 +1,6 @@
 //! Default 3D shader with depth buffer.
 
+use crate::gfx::material::Materials;
 use crate::gfx::pass::Pass;
 use crate::gfx::primitives::MVP;
 use crate::gfx::{default_flat_pipeline, Mesh, RenderContext, Scene};
@@ -54,17 +55,28 @@ impl Default {
             .device
             .create_buffer_with_data(&camera.as_bytes(), wgpu::BufferUsage::UNIFORM);
 
+        let material_buffer = scene.materials();
+
         render_ctx
             .device
             .create_bind_group(&wgpu::BindGroupDescriptor {
                 layout: &self.global_bind_group_layout,
-                bindings: &[wgpu::Binding {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer {
-                        buffer: &transforms_buffer,
-                        range: 0..std::mem::size_of::<MVP>() as u64,
+                bindings: &[
+                    wgpu::Binding {
+                        binding: 0,
+                        resource: wgpu::BindingResource::Buffer {
+                            buffer: &transforms_buffer,
+                            range: 0..std::mem::size_of::<MVP>() as u64,
+                        },
                     },
-                }],
+                    wgpu::Binding {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Buffer {
+                            buffer: &scene.materials(),
+                            range: 0..std::mem::size_of::<Materials>() as u64,
+                        },
+                    },
+                ],
                 label: None,
             })
     }
@@ -73,11 +85,23 @@ impl Default {
         // TODO: get rid of zerobytes
         use zerocopy::AsBytes;
 
-        let transform_matrix: [[f32; 4]; 4] = mesh.transformation().into();
+        #[derive(AsBytes)]
+        #[repr(C)]
+        struct ModelData {
+            transform: [[f32; 4]; 4],
+            material: u32,
+            _padding: [f32; 3],
+        }
 
-        let transforms_buffer = render_ctx
+        let model_data = ModelData {
+            transform: mesh.transformation().into(),
+            material: mesh.material() as u32,
+            _padding: [0.0; 3],
+        };
+
+        let model_buffer = render_ctx
             .device
-            .create_buffer_with_data(&transform_matrix.as_bytes(), wgpu::BufferUsage::UNIFORM);
+            .create_buffer_with_data(&model_data.as_bytes(), wgpu::BufferUsage::UNIFORM);
 
         render_ctx
             .device
@@ -86,8 +110,8 @@ impl Default {
                 bindings: &[wgpu::Binding {
                     binding: 0,
                     resource: wgpu::BindingResource::Buffer {
-                        buffer: &transforms_buffer,
-                        range: 0..std::mem::size_of::<[[f32; 4]; 4]>() as u64,
+                        buffer: &model_buffer,
+                        range: 0..std::mem::size_of::<ModelData>() as u64,
                     },
                 }],
                 label: None,

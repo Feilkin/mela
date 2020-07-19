@@ -1,5 +1,6 @@
 //! Mesh interface things
 
+use crate::gfx::material::MetallicRoughness;
 use crate::gfx::primitives::Vertex;
 use crate::gfx::RenderContext;
 use gltf::Semantic;
@@ -13,6 +14,7 @@ pub trait Mesh {
     fn texcoords_buffer(&self) -> (Rc<wgpu::Buffer>, u64, u64);
     fn index_buffer(&self) -> (Rc<wgpu::Buffer>, u64, u64);
     fn transformation(&self) -> Matrix4<f32>;
+    fn material(&self) -> usize;
 }
 
 pub struct DefaultMesh {
@@ -21,6 +23,7 @@ pub struct DefaultMesh {
     texcoords_buffer: (Rc<wgpu::Buffer>, u64, u64),
     index_buffer: (Rc<wgpu::Buffer>, u64, u64),
     transformation: nalgebra::Matrix4<f32>,
+    material: usize,
 }
 
 impl Mesh for DefaultMesh {
@@ -42,6 +45,10 @@ impl Mesh for DefaultMesh {
 
     fn transformation(&self) -> Matrix4<f32> {
         self.transformation.clone()
+    }
+
+    fn material(&self) -> usize {
+        self.material
     }
 }
 
@@ -111,8 +118,11 @@ impl DefaultMesh {
         let indices_slice_length = indices_view.length() as u64;
         let index_buffer = Rc::clone(&buffers[indices_view.buffer().index()]);
 
+        let material = primitive.material().index().unwrap_or(0);
+
         DefaultMesh {
             transformation,
+            material,
             positions_buffer,
             texcoords_buffer,
             normals_buffer,

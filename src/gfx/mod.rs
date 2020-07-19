@@ -10,6 +10,7 @@ pub use spritebatch::Spritebatch;
 use crate::gfx::primitives::{Vertex, Vertex2D};
 
 pub mod light;
+mod material;
 mod mesh;
 pub mod pass;
 pub mod primitives;
@@ -169,11 +170,18 @@ fn default_flat_pipeline(
 
     let global_bind_group_layout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            bindings: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStage::VERTEX,
-                ty: wgpu::BindingType::UniformBuffer { dynamic: false },
-            }],
+            bindings: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+                },
+            ],
             label: None,
         });
 
@@ -181,7 +189,7 @@ fn default_flat_pipeline(
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             bindings: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStage::VERTEX,
+                visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::UniformBuffer { dynamic: false },
             }],
             label: None,

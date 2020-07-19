@@ -1,22 +1,27 @@
 //! Scene stuff
 
+use crate::gfx::material::Materials;
 use crate::gfx::mesh::DefaultMesh;
 use crate::gfx::primitives::MVP;
 use crate::gfx::{Mesh, RenderContext};
 use gltf::buffer::Source;
 use gltf::camera::Projection;
 use std::rc::Rc;
+use wgpu::Buffer;
 
 pub trait Scene {
     type MeshIter<'a>: Iterator<Item = &'a dyn Mesh>;
 
     fn camera(&self) -> MVP;
     fn meshes<'a, 's: 'a>(&'s self) -> Self::MeshIter<'a>;
+    fn materials(&self) -> Rc<wgpu::Buffer>;
 }
 
 pub struct DefaultScene {
     buffers: Vec<Rc<wgpu::Buffer>>,
     meshes: Vec<DefaultMesh>,
+    materials: Materials,
+    materials_buffer: Rc<wgpu::Buffer>,
     camera: MVP,
 }
 
@@ -29,6 +34,10 @@ impl Scene for DefaultScene {
 
     fn meshes<'a, 's: 'a>(&'s self) -> Self::MeshIter<'a> {
         self.meshes.iter().map(|mesh| mesh as &dyn Mesh)
+    }
+
+    fn materials(&self) -> Rc<wgpu::Buffer> {
+        self.materials_buffer.clone()
     }
 }
 
@@ -48,6 +57,18 @@ impl DefaultScene {
                 ))
             })
             .collect();
+
+        // upload materials to GPU
+        let materials: Materials = document.materials().into();
+        let materials_buffer = {
+            use zerocopy::AsBytes;
+
+            Rc::new(
+                render_ctx
+                    .device
+                    .create_buffer_with_data(materials.as_bytes(), wgpu::BufferUsage::UNIFORM),
+            )
+        };
 
         // setup camera
         let camera = document.cameras().next().expect("no camera in scene");
@@ -99,6 +120,8 @@ impl DefaultScene {
         }
 
         DefaultScene {
+            materials,
+            materials_buffer,
             camera,
             meshes,
             buffers,

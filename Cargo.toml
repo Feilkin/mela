@@ -25,6 +25,9 @@ winit = "0.22.0"
 wgpu = "0.5"
 zerocopy = "0.2"
 
+[profile.release]
+debug = true
+
 [[example]]
 name="hello3d"
 path="examples/hello3d/main.rs"
