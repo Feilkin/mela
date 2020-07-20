@@ -55,8 +55,8 @@ where
 
     fn update<'f>(
         &mut self,
-        delta: Duration,
         (body_reader, transform_reader): Self::SystemData<'f>,
+        delta: Duration,
         io_state: &IoState,
         render_ctx: &mut RenderContext,
     ) -> () {

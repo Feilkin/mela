@@ -5,8 +5,9 @@ use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{Component, ComponentStorage};
 use nalgebra::{RealField, UnitQuaternion, Vector3};
 use ncollide3d::shape::ShapeHandle;
+use serde::export::Formatter;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Transform<T: RealField> {
     pub translation: Vector3<T>,
     pub rotation: UnitQuaternion<T>,
@@ -27,6 +28,12 @@ where
 pub struct PhysicsBody<T: RealField> {
     pub shapes: Vec<(ShapeHandle<T>, T)>,
     pub mass: T,
+}
+
+impl<T: RealField> std::fmt::Debug for PhysicsBody<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unimplemented!()
+    }
 }
 
 impl<T: RealField> Component for PhysicsBody<T> {}

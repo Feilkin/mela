@@ -77,8 +77,8 @@ pub trait System<W: World> {
     fn name(&self) -> &'static str;
     fn update<'f>(
         &mut self,
-        delta: Duration,
         data: Self::SystemData<'f>,
+        delta: Duration,
         io_state: &IoState,
         render_ctx: &mut RenderContext, // TODO: fix profiler
                                         //        profiler_tag: profiler::OpenTagTree<'f>
@@ -86,4 +86,34 @@ pub trait System<W: World> {
 
     fn draw(&self, render_ctx: &mut RenderContext) {}
     fn draw_to(&self, view: &[&wgpu::TextureView], render_ctx: &mut RenderContext) {}
+}
+
+pub trait SystemCaller<W: World> {
+    fn dispatch<'a, 's>(
+        &'s mut self,
+        world: &'a W,
+        delta: Duration,
+        io_state: &IoState,
+        render_ctx: &mut RenderContext,
+    ) -> ();
+}
+
+impl<W: World, S> SystemCaller<W> for S
+where
+    S: System<W>,
+{
+    fn dispatch<'a, 's>(
+        &'s mut self,
+        world: &'a W,
+        delta: Duration,
+        io_state: &IoState,
+        render_ctx: &mut RenderContext,
+    ) -> () {
+        self.update(
+            <<S as System<W>>::SystemData<'a> as SystemData<'a, W>>::get(world),
+            delta,
+            io_state,
+            render_ctx,
+        )
+    }
 }

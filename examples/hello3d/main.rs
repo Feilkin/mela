@@ -10,7 +10,9 @@ use std::time::Duration;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::ControlFlow;
 
+mod components;
 mod states;
+mod world;
 
 struct Hello3dGame {
     state: States,
