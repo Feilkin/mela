@@ -5,6 +5,7 @@ use crate::gfx::pass::Pass;
 use crate::gfx::primitives::MVP;
 use crate::gfx::{default_flat_pipeline, Mesh, RenderContext, Scene};
 use std::rc::Rc;
+use std::sync::Arc;
 use wgpu::BindGroup;
 
 pub struct Default {
@@ -72,7 +73,7 @@ impl Default {
                     wgpu::Binding {
                         binding: 1,
                         resource: wgpu::BindingResource::Buffer {
-                            buffer: &scene.materials(),
+                            buffer: scene.materials(),
                             range: 0..std::mem::size_of::<Materials>() as u64,
                         },
                     },
@@ -132,11 +133,11 @@ where
         let mut mesh_render_data = Vec::with_capacity(upper_bound.unwrap_or(lower_bound));
 
         struct MeshData {
-            index_buffer: Rc<wgpu::Buffer>,
+            index_buffer: Arc<wgpu::Buffer>,
             index_offset: u64,
             index_size: u64,
             index_count: u32,
-            vertex_buffers: Vec<(Rc<wgpu::Buffer>, u64, u64)>,
+            vertex_buffers: Vec<(Arc<wgpu::Buffer>, u64, u64)>,
             bind_group: wgpu::BindGroup,
         }
 

@@ -1,13 +1,13 @@
 //! ECS world definition
 
 use crate::components::MyComponents;
-use mela::ecs::component::{PhysicsBody, Transform};
+use mela::ecs::component::{MeshComponent, PhysicsBody, Transform};
 use mela::ecs::system::physics::PhysicsSystem;
 use mela::ecs::system::SystemCaller;
 use mela::ecs::world::WorldStorage;
 use mela::ecs::{entity::EntityBuilder, world::World, Entity, VecStorage};
 use mela::game::IoState;
-use mela::gfx::RenderContext;
+use mela::gfx::{DefaultMesh, RenderContext};
 use nalgebra::Vector3;
 use std::time::Duration;
 
@@ -77,6 +77,18 @@ impl WorldStorage<Transform<f32>> for MyWorld {
 
     fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage {
         &self.components.transformations
+    }
+
+    fn mut_storage<'s, 'w: 's>(&'w self) -> &'s mut Self::Storage {
+        unimplemented!()
+    }
+}
+
+impl WorldStorage<MeshComponent<DefaultMesh>> for MyWorld {
+    type Storage = VecStorage<MeshComponent<DefaultMesh>>;
+
+    fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage {
+        &self.components.meshes
     }
 
     fn mut_storage<'s, 'w: 's>(&'w self) -> &'s mut Self::Storage {

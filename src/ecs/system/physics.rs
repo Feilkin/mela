@@ -67,7 +67,11 @@ where
                     .expect("entity missing transformation");
                 let body = RigidBodyDesc::new()
                     .mass(body_desc.mass)
-                    .translation(transform.translation.clone())
+                    .translation(transform.transform_vector(&Vector3::new(
+                        T::zero(),
+                        T::zero(),
+                        T::zero(),
+                    )))
                     .build();
 
                 let body_handle = self.bodies.insert(body);

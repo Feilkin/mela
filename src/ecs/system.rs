@@ -8,6 +8,7 @@ use crate::game::IoState;
 use crate::gfx::RenderContext;
 
 pub mod physics;
+pub mod scene;
 
 pub struct Read<'a, C> {
     reader: Box<dyn ReadAccess<'a, C> + 'a>,
@@ -96,6 +97,8 @@ pub trait SystemCaller<W: World> {
         io_state: &IoState,
         render_ctx: &mut RenderContext,
     ) -> ();
+
+    fn render<'a, 's>(&'s self, render_ctx: &mut RenderContext) -> ();
 }
 
 impl<W: World, S> SystemCaller<W> for S
@@ -115,5 +118,9 @@ where
             io_state,
             render_ctx,
         )
+    }
+
+    fn render<'a, 's>(&'s self, render_ctx: &mut RenderContext) -> () {
+        self.draw(render_ctx)
     }
 }

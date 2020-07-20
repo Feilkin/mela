@@ -10,7 +10,7 @@ pub use spritebatch::Spritebatch;
 use crate::gfx::primitives::{Vertex, Vertex2D};
 
 pub mod light;
-mod material;
+pub(crate) mod material;
 mod mesh;
 pub mod pass;
 pub mod primitives;
@@ -19,7 +19,7 @@ mod scene;
 mod spritebatch;
 
 // re-exports
-pub use mesh::Mesh;
+pub use mesh::{DefaultMesh, Mesh};
 pub use scene::{DefaultScene, Scene};
 
 /// Type alias over reference counted wgpu texture

@@ -3,15 +3,22 @@
 use crate::ecs::system::{Read, SystemData};
 use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{Component, ComponentStorage};
-use nalgebra::{RealField, UnitQuaternion, Vector3};
+use crate::gfx::Mesh;
+use nalgebra::{Matrix4, RealField, UnitQuaternion, Vector3};
 use ncollide3d::shape::ShapeHandle;
 use serde::export::Formatter;
+use std::ops::Deref;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
-pub struct Transform<T: RealField> {
-    pub translation: Vector3<T>,
-    pub rotation: UnitQuaternion<T>,
-    pub scale: Vector3<T>,
+pub struct Transform<T: RealField>(pub Matrix4<T>);
+
+impl<T: RealField> Deref for Transform<T> {
+    type Target = Matrix4<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl<T: RealField> Component for Transform<T> {}
@@ -43,6 +50,27 @@ where
     W: WorldStorage<PhysicsBody<T>>,
 {
     fn get(world: &'a W) -> Read<'a, PhysicsBody<T>> {
+        Read::new(Box::new(world.storage().read()))
+    }
+}
+
+pub struct MeshComponent<M: Mesh + Send + Sync> {
+    pub primitives: Vec<Arc<M>>,
+}
+
+impl<M: Mesh + Send + Sync> std::fmt::Debug for MeshComponent<M> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unimplemented!()
+    }
+}
+
+impl<M: Mesh + Send + Sync> Component for MeshComponent<M> {}
+
+impl<'a, W: World, M: 'a + Mesh + Send + Sync> SystemData<'a, W> for Read<'a, MeshComponent<M>>
+where
+    W: WorldStorage<MeshComponent<M>>,
+{
+    fn get(world: &'a W) -> Read<'a, MeshComponent<M>> {
         Read::new(Box::new(world.storage().read()))
     }
 }

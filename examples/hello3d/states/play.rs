@@ -4,18 +4,18 @@ use crate::world::MyWorld;
 use gltf::camera::Projection;
 use mela::debug::{DebugContext, DebugDrawable};
 use mela::ecs::system::physics::PhysicsSystem;
+use mela::ecs::system::scene::SceneSystem;
 use mela::ecs::system::SystemCaller;
 use mela::game::IoState;
 use mela::gfx::pass::Pass;
 use mela::gfx::primitives::{Quad, Vertex, MVP};
-use mela::gfx::{pass::Default as DefaultPass, DefaultScene, RenderContext};
+use mela::gfx::{pass::Default as DefaultPass, DefaultMesh, DefaultScene, RenderContext};
 use mela::state::State;
 use nalgebra::{Matrix4, Vector3};
 use std::time::Duration;
 
 pub struct Play {
     pass: DefaultPass,
-    scene: DefaultScene,
     world: MyWorld,
     systems: Vec<Box<dyn SystemCaller<MyWorld>>>,
 }
@@ -28,12 +28,15 @@ impl Play {
         let pass = DefaultPass::new(render_ctx);
         let mut world = MyWorld::default();
 
-        let systems =
-            vec![Box::new(PhysicsSystem::new(Vector3::y() * 9.81f32))
-                as Box<dyn SystemCaller<MyWorld>>];
+        let (scene_system, new_world) = SceneSystem::from_scene(scene, world, render_ctx);
+        world = new_world;
+
+        let systems = vec![
+            Box::new(PhysicsSystem::new(Vector3::y() * 9.81f32)) as Box<dyn SystemCaller<MyWorld>>,
+            Box::new(scene_system) as Box<dyn SystemCaller<MyWorld>>,
+        ];
 
         Play {
-            scene,
             pass,
             world,
             systems,
@@ -71,7 +74,9 @@ impl State for Play {
     }
 
     fn redraw(&self, render_ctx: &mut RenderContext, debug_ctx: &mut DebugContext) {
-        self.pass.render(&self.scene, render_ctx);
+        for system in &self.systems {
+            system.render(render_ctx);
+        }
     }
 }
 

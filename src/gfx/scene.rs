@@ -7,6 +7,7 @@ use crate::gfx::{Mesh, RenderContext};
 use gltf::buffer::Source;
 use gltf::camera::Projection;
 use std::rc::Rc;
+use std::sync::Arc;
 use wgpu::Buffer;
 
 pub trait Scene {
@@ -14,18 +15,18 @@ pub trait Scene {
 
     fn camera(&self) -> MVP;
     fn meshes<'a, 's: 'a>(&'s self) -> Self::MeshIter<'a>;
-    fn materials(&self) -> Rc<wgpu::Buffer>;
+    fn materials(&self) -> &wgpu::Buffer;
 }
 
-pub struct DefaultScene {
-    buffers: Vec<Rc<wgpu::Buffer>>,
-    meshes: Vec<DefaultMesh>,
-    materials: Materials,
-    materials_buffer: Rc<wgpu::Buffer>,
-    camera: MVP,
+pub struct DefaultScene<M: Mesh> {
+    pub buffers: Vec<Arc<wgpu::Buffer>>,
+    pub meshes: Vec<M>,
+    pub materials: Materials,
+    pub materials_buffer: Arc<wgpu::Buffer>,
+    pub camera: MVP,
 }
 
-impl Scene for DefaultScene {
+impl<M: Mesh> Scene for DefaultScene<M> {
     type MeshIter<'a> = impl Iterator<Item = &'a dyn Mesh>;
 
     fn camera(&self) -> MVP {
@@ -36,22 +37,22 @@ impl Scene for DefaultScene {
         self.meshes.iter().map(|mesh| mesh as &dyn Mesh)
     }
 
-    fn materials(&self) -> Rc<wgpu::Buffer> {
-        self.materials_buffer.clone()
+    fn materials(&self) -> &wgpu::Buffer {
+        self.materials_buffer.as_ref()
     }
 }
 
-impl DefaultScene {
+impl DefaultScene<DefaultMesh> {
     pub fn from_gltf(
         document: gltf::Document,
         buffers: Vec<gltf::buffer::Data>,
         render_ctx: &mut RenderContext,
-    ) -> DefaultScene {
+    ) -> DefaultScene<DefaultMesh> {
         // upload buffers to GPU
         let buffers: Vec<_> = buffers
             .into_iter()
             .map(|b| {
-                Rc::new(render_ctx.device.create_buffer_with_data(
+                Arc::new(render_ctx.device.create_buffer_with_data(
                     &b,
                     wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::INDEX,
                 ))
@@ -63,7 +64,7 @@ impl DefaultScene {
         let materials_buffer = {
             use zerocopy::AsBytes;
 
-            Rc::new(
+            Arc::new(
                 render_ctx
                     .device
                     .create_buffer_with_data(materials.as_bytes(), wgpu::BufferUsage::UNIFORM),
