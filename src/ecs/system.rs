@@ -103,20 +103,6 @@ where
     }
 }
 
-// impl<'read, 'data: 'read, W, C, CS, R> SystemData<'data, W> for Read<'read, C>
-// where
-//     C: Component,
-//     W: World + WorldStorage<C, Storage = CS>,
-//     CS: ComponentStorage<C, Reader = R>,
-//     R: ReadAccess<'read, C>,
-// {
-//     fn get(world: &W) -> Read<'read, C> {
-//         let component_storage: CS = world.storage();
-//         let reader: R = component_storage.read();
-//         Read::new(reader)
-//     }
-// }
-
 impl<'a, A, W> SystemData<'a, W> for (A,)
 where
     A: SystemData<'a, W>,
