@@ -26,7 +26,7 @@ use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 /// An interface for component storages. See `VecStorage` for example implementation
 pub trait ComponentStorage<C: Component> {
     type Reader<'r>: ReadAccess<'r, C>;
-    type Writer<'w>: WriteAccess<'w, C>;
+    type Writer<'w>: RwAccess<'w, C>;
 
     /// returns slice of components, indexed by entity
     fn read<'r, 'd: 'r>(&'d self) -> Self::Reader<'r>
@@ -311,6 +311,28 @@ impl<'d: 'w, 'w, C: 'd + Component> WriteAccess<'w, C> for DequeWriter<'d, C> {
         self.data.clear();
     }
 }
+
+impl<'d: 'r, 'r, C: 'd + Component> ReadAccess<'r, C> for DequeWriter<'d, C> {
+    fn fetch(&self, entity: Entity) -> Option<&C> {
+        for (other, component) in self.data.iter() {
+            if entity == *other {
+                return Some(component);
+            }
+        }
+
+        None
+    }
+
+    fn iter<'a, 's>(&'s self) -> Box<dyn Iterator<Item = (Entity, &'a C)> + 'a>
+    where
+        's: 'a,
+        'r: 's,
+    {
+        Box::new(self.data.iter().map(|(e, c)| (e.clone(), c)))
+    }
+}
+
+impl<'v: 'w, 'w, C: Component> RwAccess<'w, C> for DequeWriter<'v, C> {}
 
 impl<C: 'static + Component + Debug> ComponentStorage<C> for DequeStorage<C> {
     type Reader<'r> = DequeReader<'r, C>;

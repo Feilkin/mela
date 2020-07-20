@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use crate::ecs::world::{World, WorldStorage};
-use crate::ecs::{Component, ComponentStorage, Entity, Event, ReadAccess, WriteAccess};
+use crate::ecs::{Component, ComponentStorage, Entity, Event, ReadAccess, RwAccess, WriteAccess};
 use crate::game::IoState;
 use crate::gfx::RenderContext;
 
@@ -33,8 +33,74 @@ where
     }
 }
 
+pub struct Write<'a, C> {
+    writer: Box<dyn RwAccess<'a, C> + 'a>,
+}
+
+impl<'a, C: Component> Write<'a, C> {
+    pub fn new(writer: Box<dyn RwAccess<'a, C> + 'a>) -> Write<'a, C> {
+        Write { writer }
+    }
+}
+
+impl<'access, C> Write<'access, C>
+where
+    C: Component,
+{
+    pub fn iter<'borrow, 's: 'borrow>(&'s self) -> impl Iterator<Item = (Entity, &'borrow C)> {
+        self.writer.iter()
+    }
+
+    pub fn fetch(&self, entity: Entity) -> Option<&C> {
+        self.writer.fetch(entity)
+    }
+
+    /// sets value of Component for Entity
+    fn set(&mut self, entity: Entity, value: C) {
+        self.writer.set(entity, value)
+    }
+
+    /// unsets value of Component for Entity
+    fn unset(&mut self, entity: Entity) {
+        self.writer.unset(entity)
+    }
+
+    /// mutable iterator over component storage
+    fn iter_mut<'a>(&'access mut self) -> Box<dyn Iterator<Item = (Entity, &'a mut C)> + 'a>
+    where
+        'access: 'a,
+    {
+        self.writer.iter_mut()
+    }
+
+    /// clears this Component storage, unsetting the value for each Entity
+    fn clear(&mut self) {
+        self.writer.clear()
+    }
+}
+
 pub trait SystemData<'access, W: World> {
     fn get(world: &'access W) -> Self;
+}
+
+impl<'access, W, C> SystemData<'access, W> for Write<'access, C>
+where
+    C: 'access + Component,
+    W: World + WorldStorage<C>,
+{
+    fn get(world: &'access W) -> Self {
+        Write::new(Box::new(world.storage().write()))
+    }
+}
+
+impl<'access, W, C> SystemData<'access, W> for Read<'access, C>
+where
+    C: 'access + Component,
+    W: World + WorldStorage<C>,
+{
+    fn get(world: &'access W) -> Self {
+        Read::new(Box::new(world.storage().read()))
+    }
 }
 
 // impl<'read, 'data: 'read, W, C, CS, R> SystemData<'data, W> for Read<'read, C>

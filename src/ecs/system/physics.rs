@@ -1,7 +1,7 @@
 //! Physics related systems
 
 use crate::ecs::component::{PhysicsBody, Transform};
-use crate::ecs::system::Read;
+use crate::ecs::system::{Read, Write};
 use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{ComponentStorage, Entity, ReadAccess, RwAccess, System};
 use crate::game::IoState;
@@ -47,7 +47,7 @@ impl<W: World, T: RealField> System<W> for PhysicsSystem<T>
 where
     W: WorldStorage<PhysicsBody<T>> + WorldStorage<Transform<T>>,
 {
-    type SystemData<'a> = (Read<'a, PhysicsBody<T>>, Read<'a, Transform<T>>);
+    type SystemData<'a> = (Read<'a, PhysicsBody<T>>, Write<'a, Transform<T>>);
 
     fn name(&self) -> &'static str {
         "PhysicsSystem"
