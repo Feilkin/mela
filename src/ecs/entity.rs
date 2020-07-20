@@ -88,7 +88,7 @@ impl<W: World> EntityBuilder<W> {
             ..
         } = self;
 
-        world.mut_storage().write().set(new_entity, component);
+        world.storage().write().set(new_entity, component);
 
         EntityBuilder {
             new_entity,

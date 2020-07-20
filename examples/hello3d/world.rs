@@ -66,10 +66,6 @@ impl WorldStorage<PhysicsBody<f32>> for MyWorld {
     fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage {
         &self.components.physics_bodies
     }
-
-    fn mut_storage<'s, 'w: 's>(&'w self) -> &'s mut Self::Storage {
-        unimplemented!()
-    }
 }
 
 impl WorldStorage<Transform<f32>> for MyWorld {
@@ -78,10 +74,6 @@ impl WorldStorage<Transform<f32>> for MyWorld {
     fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage {
         &self.components.transformations
     }
-
-    fn mut_storage<'s, 'w: 's>(&'w self) -> &'s mut Self::Storage {
-        unimplemented!()
-    }
 }
 
 impl WorldStorage<MeshComponent<DefaultMesh>> for MyWorld {
@@ -89,9 +81,5 @@ impl WorldStorage<MeshComponent<DefaultMesh>> for MyWorld {
 
     fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage {
         &self.components.meshes
-    }
-
-    fn mut_storage<'s, 'w: 's>(&'w self) -> &'s mut Self::Storage {
-        unimplemented!()
     }
 }

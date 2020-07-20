@@ -21,6 +21,7 @@ pub mod system;
 pub mod world;
 
 pub use event::Event;
+use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 /// An interface for component storages. See `VecStorage` for example implementation
 pub trait ComponentStorage<C: Component> {
@@ -33,7 +34,7 @@ pub trait ComponentStorage<C: Component> {
         Self::Reader<'r>: ReadAccess<'r, C>;
 
     /// writes new component value for entity
-    fn write<'w, 'd: 'w>(&'d mut self) -> Self::Writer<'w>;
+    fn write<'w, 'd: 'w>(&'d self) -> Self::Writer<'w>;
 }
 
 /// An interface for Component. Doesn't actually do anything yet, other than make sure our components are sized, and shareable across threads
@@ -74,12 +75,14 @@ pub trait RwAccess<'a, C: Component>: ReadAccess<'a, C> + WriteAccess<'a, C> {}
 /// memory usage.
 #[derive(Debug)]
 pub struct VecStorage<C: Component + Debug> {
-    data: Vec<Option<C>>,
+    data: RwLock<Vec<Option<C>>>,
 }
 
 impl<C: Component + Debug> Default for VecStorage<C> {
     fn default() -> Self {
-        VecStorage { data: Vec::new() }
+        VecStorage {
+            data: RwLock::new(Vec::new()),
+        }
     }
 }
 
@@ -91,11 +94,11 @@ impl<C: Component + Debug> VecStorage<C> {
 
 /// Read accessor for VecStorage
 pub struct VecReader<'r, C: 'r> {
-    data: &'r Vec<Option<C>>,
+    data: RwLockReadGuard<'r, Vec<Option<C>>>,
 }
 
 impl<'r, C> VecReader<'r, C> {
-    pub fn new(data: &'r Vec<Option<C>>) -> VecReader<'r, C> {
+    pub fn new(data: RwLockReadGuard<'r, Vec<Option<C>>>) -> VecReader<'r, C> {
         VecReader { data }
     }
 }
@@ -125,11 +128,11 @@ impl<'v: 'r, 'r, C: 'v + Component> ReadAccess<'r, C> for VecReader<'v, C> {
 
 /// Write access to a VecStorage. Uses mutable borrow so there can only exists one writer at a time.
 pub struct VecWriter<'v, C> {
-    data: &'v mut Vec<Option<C>>,
+    data: RwLockWriteGuard<'v, Vec<Option<C>>>,
 }
 
 impl<'v, C: Component> VecWriter<'v, C> {
-    pub fn new(data: &'v mut Vec<Option<C>>) -> VecWriter<'v, C> {
+    pub fn new(data: RwLockWriteGuard<'v, Vec<Option<C>>>) -> VecWriter<'v, C> {
         VecWriter { data }
     }
 }
@@ -138,8 +141,9 @@ impl<'v: 'w, 'w, C: Component> WriteAccess<'w, C> for VecWriter<'v, C> {
     fn set(&mut self, entity: Entity, value: C) {
         let index = entity.into();
 
-        if self.data.capacity() <= index {
-            self.data.reserve(index - self.data.capacity() + 1);
+        let cap = self.data.capacity();
+        if cap <= index {
+            self.data.reserve(index - cap + 1);
         }
 
         if self.data.len() <= index {
@@ -214,11 +218,11 @@ impl<C: 'static + Component + Debug> ComponentStorage<C> for VecStorage<C> {
     where
         C: 'r,
     {
-        VecReader::new(&self.data)
+        VecReader::new(self.data.read().unwrap())
     }
 
-    fn write<'w, 'd: 'w>(&'d mut self) -> Self::Writer<'w> {
-        VecWriter::new(&mut self.data)
+    fn write<'w, 'd: 'w>(&'d self) -> Self::Writer<'w> {
+        VecWriter::new(self.data.write().unwrap())
     }
 }
 
@@ -319,7 +323,7 @@ impl<C: 'static + Component + Debug> ComponentStorage<C> for DequeStorage<C> {
         DequeReader::new(&self.data)
     }
 
-    fn write<'w, 'd: 'w>(&'d mut self) -> Self::Writer<'w> {
-        DequeWriter::new(&mut self.data)
+    fn write<'w, 'd: 'w>(&'d self) -> Self::Writer<'w> {
+        unimplemented!()
     }
 }

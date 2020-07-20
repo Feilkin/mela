@@ -15,5 +15,4 @@ pub trait WorldStorage<C: Component>: World {
     type Storage: ComponentStorage<C>;
 
     fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage;
-    fn mut_storage<'s, 'w: 's>(&'w self) -> &'s mut Self::Storage;
 }
