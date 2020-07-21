@@ -1,6 +1,9 @@
 //! ECS world definition
 
-use crate::components::MyComponents;
+use std::time::Duration;
+
+use nalgebra::Vector3;
+
 use mela::ecs::component::{MeshComponent, PhysicsBody, Transform};
 use mela::ecs::system::physics::PhysicsSystem;
 use mela::ecs::system::SystemCaller;
@@ -8,8 +11,8 @@ use mela::ecs::world::WorldStorage;
 use mela::ecs::{entity::EntityBuilder, world::World, Entity, VecStorage};
 use mela::game::IoState;
 use mela::gfx::{DefaultMesh, RenderContext};
-use nalgebra::Vector3;
-use std::time::Duration;
+
+use crate::components::MyComponents;
 
 #[derive(Default)]
 pub(crate) struct MyWorld {
