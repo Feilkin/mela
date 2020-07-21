@@ -18,6 +18,7 @@ use winit::{
 use crate::debug::DebugContext;
 use crate::game::Playable;
 use crate::gfx::{default_render_pipelines, RenderContext};
+use futures::stream::Concat;
 
 fn default_max_fps() -> u32 {
     300
@@ -146,7 +147,7 @@ impl<G: 'static + Playable> Application<G> {
         let mut last_update = Instant::now();
         let update_interval = Duration::from_secs_f64(1. / self.settings.max_fps as f64);
         event_loop.run(move |event, _, control_flow| {
-            *control_flow = ControlFlow::Poll;
+            *control_flow = ControlFlow::WaitUntil(last_update + update_interval);
 
             match event {
                 Event::LoopDestroyed => return,
