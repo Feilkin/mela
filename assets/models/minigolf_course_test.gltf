@@ -28,6 +28,15 @@
     "scene" : 0,
     "scenes" : [
         {
+            "extras" : {
+                "glTF2ExportSettings" : {
+                    "export_cameras" : 1,
+                    "export_extras" : 1,
+                    "export_format" : "GLTF_EMBEDDED",
+                    "export_lights" : 1,
+                    "export_yup" : 0
+                }
+            },
             "name" : "Scene",
             "nodes" : [
                 0,
@@ -40,6 +49,9 @@
     ],
     "nodes" : [
         {
+            "extras" : {
+                "ground" : 1
+            },
             "mesh" : 0,
             "name" : "Course"
         },
@@ -92,12 +104,16 @@
             ]
         },
         {
+            "extras" : {
+                "mass" : 1,
+                "ball" : 1
+            },
             "mesh" : 2,
             "name" : "Ball",
             "translation" : [
                 -5.274438381195068,
-                -15.650948524475098,
-                5.726621627807617
+                -12.679793357849121,
+                24.740768432617188
             ]
         }
     ],

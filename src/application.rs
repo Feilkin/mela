@@ -121,7 +121,7 @@ impl<G: 'static + Playable> Application<G> {
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
-            present_mode: if self.settings.vsync.unwrap_or(false) {
+            present_mode: if self.settings.vsync.unwrap_or(true) {
                 wgpu::PresentMode::Fifo
             } else {
                 wgpu::PresentMode::Mailbox

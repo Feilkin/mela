@@ -6,6 +6,7 @@ use mela::debug::{DebugContext, DebugDrawable};
 use mela::ecs::system::physics::PhysicsSystem;
 use mela::ecs::system::scene::SceneSystem;
 use mela::ecs::system::SystemCaller;
+use mela::ecs::world::World;
 use mela::game::IoState;
 use mela::gfx::pass::Pass;
 use mela::gfx::primitives::{Quad, Vertex, MVP};
@@ -22,17 +23,20 @@ pub struct Play {
 
 impl Play {
     pub fn new(assets: GameAssets, render_ctx: &mut RenderContext) -> Play {
-        let scene =
-            DefaultScene::from_gltf(assets.scene.document, assets.scene.buffers, render_ctx);
-
         let pass = DefaultPass::new(render_ctx);
         let mut world = MyWorld::default();
 
-        let (scene_system, new_world) = SceneSystem::from_scene(scene, world, render_ctx);
+        let (scene_system, new_world) = SceneSystem::from_gltf(
+            assets.scene.document,
+            assets.scene.buffers,
+            world,
+            render_ctx,
+        );
         world = new_world;
 
         let systems = vec![
-            Box::new(PhysicsSystem::new(Vector3::y() * 9.81f32)) as Box<dyn SystemCaller<MyWorld>>,
+            Box::new(PhysicsSystem::new(Vector3::z() * -9.81_f32))
+                as Box<dyn SystemCaller<MyWorld>>,
             Box::new(scene_system) as Box<dyn SystemCaller<MyWorld>>,
         ];
 

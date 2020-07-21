@@ -113,9 +113,7 @@ impl DefaultScene<DefaultMesh> {
         for node in document.default_scene().unwrap().nodes() {
             if let Some(mesh) = node.mesh() {
                 for primitive in mesh.primitives() {
-                    meshes.push(DefaultMesh::from_gltf(
-                        &node, primitive, render_ctx, &buffers,
-                    ));
+                    meshes.push(DefaultMesh::from_gltf(primitive, render_ctx, &buffers));
                 }
             }
         }

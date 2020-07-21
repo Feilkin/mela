@@ -24,7 +24,6 @@ pub struct DefaultMesh {
     normals_buffer: (Arc<wgpu::Buffer>, u64, u64),
     texcoords_buffer: (Arc<wgpu::Buffer>, u64, u64),
     index_buffer: (Arc<wgpu::Buffer>, u64, u64),
-    transformation: nalgebra::Matrix4<f32>,
     material: usize,
 }
 
@@ -46,7 +45,7 @@ impl Mesh for DefaultMesh {
     }
 
     fn transformation(&self) -> Matrix4<f32> {
-        self.transformation.clone()
+        Matrix4::identity()
     }
 
     fn material(&self) -> usize {
@@ -56,15 +55,12 @@ impl Mesh for DefaultMesh {
 
 impl DefaultMesh {
     pub fn from_gltf(
-        node: &gltf::Node,
         primitive: gltf::mesh::Primitive,
         render_ctx: &mut RenderContext,
         buffers: &[Arc<wgpu::Buffer>],
     ) -> DefaultMesh {
         // TODO: get rid of zerocopy
         use zerocopy::AsBytes;
-
-        let transformation: nalgebra::Matrix4<f32> = node.transform().matrix().into();
 
         let positions_buffer = primitive
             .attributes()
@@ -123,7 +119,6 @@ impl DefaultMesh {
         let material = primitive.material().index().unwrap_or(0);
 
         DefaultMesh {
-            transformation,
             material,
             positions_buffer,
             texcoords_buffer,

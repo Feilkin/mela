@@ -3,6 +3,7 @@
 use std::path::Path;
 
 use gltf::Error;
+use serde::{Deserialize, Serialize};
 
 use crate::asset::{Asset, AssetError, AssetState};
 use crate::gfx::RenderContext;
@@ -30,4 +31,10 @@ where
 
         Ok(AssetState::Done(Scene { document, buffers }))
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NodeAttributes {
+    pub ground: Option<u8>,
+    pub ball: Option<u8>,
 }

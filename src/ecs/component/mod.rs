@@ -6,6 +6,7 @@ use crate::ecs::{Component, ComponentStorage, RwAccess};
 use crate::gfx::Mesh;
 use nalgebra::{Matrix4, RealField, UnitQuaternion, Vector3};
 use ncollide3d::shape::ShapeHandle;
+use nphysics3d::object::ColliderDesc;
 use serde::export::Formatter;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -24,7 +25,8 @@ impl<T: RealField> Deref for Transform<T> {
 impl<T: RealField> Component for Transform<T> {}
 
 pub struct PhysicsBody<T: RealField> {
-    pub shapes: Vec<(ShapeHandle<T>, T)>,
+    pub colliders: Vec<ColliderDesc<T>>,
+    pub body_status: nphysics3d::object::BodyStatus,
     pub mass: T,
 }
 
