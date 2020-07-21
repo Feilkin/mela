@@ -16,6 +16,7 @@ use gltf::camera::Projection;
 use gltf::Semantic;
 use nalgebra::{Isometry3, Matrix4, Point3, Vector3};
 use ncollide3d::shape::{Ball, Compound, ShapeHandle, TriMesh};
+use nphysics3d::material::{BasicMaterial, MaterialHandle};
 use nphysics3d::object::{BodyStatus, ColliderDesc};
 use std::convert::TryInto;
 use std::sync::Arc;
@@ -154,8 +155,9 @@ impl SceneSystem<DefaultMesh> {
 
                 // TODO: implement custom attributes
                 if attributes.ball.unwrap_or(0) > 0 {
-                    let collider_desc =
-                        ColliderDesc::new(ShapeHandle::new(Ball::new(1.0f32))).density(1.0);
+                    let collider_desc = ColliderDesc::new(ShapeHandle::new(Ball::new(1.0f32)))
+                        .density(1.0)
+                        .material(MaterialHandle::new(BasicMaterial::new(0.8, 0.4)));
 
                     entity_builder = entity_builder.with_component(PhysicsBody {
                         body_status: BodyStatus::Dynamic,
