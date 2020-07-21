@@ -22,12 +22,14 @@ use crate::gfx::{default_render_pipelines, RenderContext};
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
     pub window_size: [f32; 2],
+    pub vsync: Option<bool>,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Settings {
             window_size: [1280., 720.],
+            vsync: Some(true),
         }
     }
 }
@@ -119,7 +121,11 @@ impl<G: 'static + Playable> Application<G> {
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
-            present_mode: wgpu::PresentMode::Mailbox,
+            present_mode: if self.settings.vsync.unwrap_or(false) {
+                wgpu::PresentMode::Fifo
+            } else {
+                wgpu::PresentMode::Mailbox
+            },
         };
 
         let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
