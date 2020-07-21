@@ -1,14 +1,17 @@
-use crate::states::{Play, States};
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::time::Duration;
+
 use image::load;
+
 use mela::asset::scene::Scene;
 use mela::asset::{Asset, AssetState};
 use mela::debug::{DebugContext, DebugDrawable};
 use mela::game::IoState;
 use mela::gfx::{RenderContext, Texture};
 use mela::state::State;
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::time::Duration;
+
+use crate::states::{Play, States};
 
 pub struct RequiredGameAssets {
     scene: Box<dyn Asset<Scene>>,

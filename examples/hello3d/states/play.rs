@@ -1,7 +1,8 @@
-use crate::states::loading::GameAssets;
-use crate::states::States;
-use crate::world::MyWorld;
+use std::time::Duration;
+
 use gltf::camera::Projection;
+use nalgebra::{Matrix4, Vector3};
+
 use mela::debug::{DebugContext, DebugDrawable};
 use mela::ecs::system::physics::PhysicsSystem;
 use mela::ecs::system::scene::SceneSystem;
@@ -12,8 +13,10 @@ use mela::gfx::pass::Pass;
 use mela::gfx::primitives::{Quad, Vertex, MVP};
 use mela::gfx::{pass::Default as DefaultPass, DefaultMesh, DefaultScene, RenderContext};
 use mela::state::State;
-use nalgebra::{Matrix4, Vector3};
-use std::time::Duration;
+
+use crate::states::loading::GameAssets;
+use crate::states::States;
+use crate::world::MyWorld;
 
 pub struct Play {
     pass: DefaultPass,

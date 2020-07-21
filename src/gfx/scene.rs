@@ -1,14 +1,16 @@
 //! Scene stuff
 
+use std::rc::Rc;
+use std::sync::Arc;
+
+use gltf::buffer::Source;
+use gltf::camera::Projection;
+use wgpu::Buffer;
+
 use crate::gfx::material::Materials;
 use crate::gfx::mesh::DefaultMesh;
 use crate::gfx::primitives::MVP;
 use crate::gfx::{Mesh, RenderContext};
-use gltf::buffer::Source;
-use gltf::camera::Projection;
-use std::rc::Rc;
-use std::sync::Arc;
-use wgpu::Buffer;
 
 pub trait Scene {
     type MeshIter<'a>: Iterator<Item = &'a dyn Mesh>;

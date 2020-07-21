@@ -1,14 +1,14 @@
-mod loading;
-mod play;
+use std::time::Duration;
 
 pub use loading::Loading;
-pub use play::Play;
-
 use mela::debug::{DebugContext, DebugDrawable};
 use mela::game::IoState;
 use mela::gfx::RenderContext;
 use mela::state::State;
-use std::time::Duration;
+pub use play::Play;
+
+mod loading;
+mod play;
 
 pub enum States {
     Loading(Loading),

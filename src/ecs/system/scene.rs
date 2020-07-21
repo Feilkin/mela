@@ -1,5 +1,17 @@
 //! Scene-related systems
 
+use std::convert::TryInto;
+use std::sync::Arc;
+use std::time::Duration;
+
+use gltf::camera::Projection;
+use gltf::Semantic;
+use nalgebra::{Isometry3, Matrix4, Point3, Vector3};
+use ncollide3d::shape::{Ball, Compound, ShapeHandle, TriMesh};
+use nphysics3d::material::{BasicMaterial, MaterialHandle};
+use nphysics3d::object::{BodyStatus, ColliderDesc};
+use wgpu::Buffer;
+
 use crate::asset::scene::NodeAttributes;
 use crate::ecs::component::{MeshComponent, PhysicsBody, Transform};
 use crate::ecs::system::Read;
@@ -12,16 +24,6 @@ use crate::gfx::primitives::MVP;
 use crate::gfx::{
     pass::Default as DefaultPass, DefaultMesh, DefaultScene, Mesh, RenderContext, Scene,
 };
-use gltf::camera::Projection;
-use gltf::Semantic;
-use nalgebra::{Isometry3, Matrix4, Point3, Vector3};
-use ncollide3d::shape::{Ball, Compound, ShapeHandle, TriMesh};
-use nphysics3d::material::{BasicMaterial, MaterialHandle};
-use nphysics3d::object::{BodyStatus, ColliderDesc};
-use std::convert::TryInto;
-use std::sync::Arc;
-use std::time::Duration;
-use wgpu::Buffer;
 
 pub struct SceneSystem<M: Mesh> {
     meshes: Vec<MeshWrapper<M>>,

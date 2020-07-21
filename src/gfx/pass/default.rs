@@ -1,12 +1,14 @@
 //! Default 3D shader with depth buffer.
 
+use std::rc::Rc;
+use std::sync::Arc;
+
+use wgpu::BindGroup;
+
 use crate::gfx::material::Materials;
 use crate::gfx::pass::Pass;
 use crate::gfx::primitives::MVP;
 use crate::gfx::{default_flat_pipeline, Mesh, RenderContext, Scene};
-use std::rc::Rc;
-use std::sync::Arc;
-use wgpu::BindGroup;
 
 pub struct Default {
     global_bind_group_layout: wgpu::BindGroupLayout,

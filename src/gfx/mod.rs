@@ -5,6 +5,9 @@ use std::rc::Rc;
 
 use wgpu::{ShaderModule, TextureComponentType, VertexStateDescriptor};
 
+// re-exports
+pub use mesh::{DefaultMesh, Mesh};
+pub use scene::{DefaultScene, Scene};
 pub use spritebatch::Spritebatch;
 
 use crate::gfx::primitives::{Vertex, Vertex2D};
@@ -17,10 +20,6 @@ pub mod primitives;
 mod scene;
 
 mod spritebatch;
-
-// re-exports
-pub use mesh::{DefaultMesh, Mesh};
-pub use scene::{DefaultScene, Scene};
 
 /// Type alias over reference counted wgpu texture
 pub type Texture = Rc<wgpu::Texture>;

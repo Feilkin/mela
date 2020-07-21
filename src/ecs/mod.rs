@@ -7,8 +7,10 @@ use std::net::Shutdown::Write;
 use std::ops::Deref;
 use std::rc::Rc;
 use std::slice::Iter;
+use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub use entity::Entity;
+pub use event::Event;
 pub use system::System;
 
 use crate::ecs::entity::EntityBuilder;
@@ -19,9 +21,6 @@ pub mod entity;
 mod event;
 pub mod system;
 pub mod world;
-
-pub use event::Event;
-use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 /// An interface for component storages. See `VecStorage` for example implementation
 pub trait ComponentStorage<C: Component> {

@@ -1,11 +1,8 @@
 //! Physics related systems
 
-use crate::ecs::component::{PhysicsBody, Transform};
-use crate::ecs::system::{Read, Write};
-use crate::ecs::world::{World, WorldStorage};
-use crate::ecs::{ComponentStorage, Entity, ReadAccess, RwAccess, System};
-use crate::game::IoState;
-use crate::gfx::RenderContext;
+use std::collections::HashMap;
+use std::time::Duration;
+
 use nalgebra::{Matrix4, RealField, Vector3};
 use ncollide3d::shape::ShapeHandle;
 use nphysics3d::force_generator::DefaultForceGeneratorSet;
@@ -15,8 +12,13 @@ use nphysics3d::{
     object::{DefaultBodyHandle, DefaultBodySet, DefaultColliderSet},
     world::{DefaultGeometricalWorld, DefaultMechanicalWorld},
 };
-use std::collections::HashMap;
-use std::time::Duration;
+
+use crate::ecs::component::{PhysicsBody, Transform};
+use crate::ecs::system::{Read, Write};
+use crate::ecs::world::{World, WorldStorage};
+use crate::ecs::{ComponentStorage, Entity, ReadAccess, RwAccess, System};
+use crate::game::IoState;
+use crate::gfx::RenderContext;
 
 pub struct PhysicsSystem<T: RealField> {
     update_interval: Duration,

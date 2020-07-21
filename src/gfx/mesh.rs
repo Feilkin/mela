@@ -1,13 +1,15 @@
 //! Mesh interface things
 
+use std::rc::Rc;
+use std::sync::Arc;
+
+use gltf::Semantic;
+use nalgebra::Matrix4;
+use wgpu::Buffer;
+
 use crate::gfx::material::MetallicRoughness;
 use crate::gfx::primitives::Vertex;
 use crate::gfx::RenderContext;
-use gltf::Semantic;
-use nalgebra::Matrix4;
-use std::rc::Rc;
-use std::sync::Arc;
-use wgpu::Buffer;
 
 pub trait Mesh {
     fn positions_buffer(&self) -> (Arc<wgpu::Buffer>, u64, u64);

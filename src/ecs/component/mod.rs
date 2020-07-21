@@ -1,15 +1,17 @@
 //! Default ECS components
 
-use crate::ecs::system::{Read, SystemData, Write};
-use crate::ecs::world::{World, WorldStorage};
-use crate::ecs::{Component, ComponentStorage, RwAccess};
-use crate::gfx::Mesh;
+use std::ops::Deref;
+use std::sync::Arc;
+
 use nalgebra::{Matrix4, RealField, UnitQuaternion, Vector3};
 use ncollide3d::shape::ShapeHandle;
 use nphysics3d::object::ColliderDesc;
 use serde::export::Formatter;
-use std::ops::Deref;
-use std::sync::Arc;
+
+use crate::ecs::system::{Read, SystemData, Write};
+use crate::ecs::world::{World, WorldStorage};
+use crate::ecs::{Component, ComponentStorage, RwAccess};
+use crate::gfx::Mesh;
 
 #[derive(Clone, Debug)]
 pub struct Transform<T: RealField>(pub Matrix4<T>);

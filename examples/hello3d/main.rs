@@ -1,14 +1,17 @@
 //! 3D graphics demo
 
-use crate::states::States;
+use std::time::Duration;
+
+use winit::event::{Event, WindowEvent};
+use winit::event_loop::ControlFlow;
+
 use mela::application::Application;
 use mela::debug::DebugContext;
 use mela::game::{IoState, Playable};
 use mela::gfx::RenderContext;
 use mela::state::State;
-use std::time::Duration;
-use winit::event::{Event, WindowEvent};
-use winit::event_loop::ControlFlow;
+
+use crate::states::States;
 
 mod components;
 mod states;

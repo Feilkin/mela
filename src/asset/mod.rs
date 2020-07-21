@@ -6,11 +6,11 @@ use std::path::Path;
 use std::rc::Rc;
 
 use image::DynamicImage;
+use wgpu::BufferDescriptor;
 
 // Example Asset implementation
 // TODO: move to crates when done.
 use crate::gfx::{RenderContext, Texture};
-use wgpu::BufferDescriptor;
 
 pub mod scene;
 pub mod tilemap;
