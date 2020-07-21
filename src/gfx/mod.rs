@@ -233,8 +233,8 @@ fn default_flat_pipeline(
                 stencil_read_mask: 0,
                 stencil_write_mask: 0,
             }),
-            sample_count: 1,
-            sample_mask: 0,
+            sample_count: 4,
+            sample_mask: !0,
             alpha_to_coverage_enabled: false,
             vertex_state: VertexStateDescriptor {
                 index_format: wgpu::IndexFormat::Uint16,
