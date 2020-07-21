@@ -19,14 +19,12 @@ use crate::states::States;
 use crate::world::MyWorld;
 
 pub struct Play {
-    pass: DefaultPass,
     world: MyWorld,
     systems: Vec<Box<dyn SystemCaller<MyWorld>>>,
 }
 
 impl Play {
     pub fn new(assets: GameAssets, render_ctx: &mut RenderContext) -> Play {
-        let pass = DefaultPass::new(render_ctx);
         let mut world = MyWorld::default();
 
         let (scene_system, new_world) = SceneSystem::from_gltf(
@@ -43,11 +41,7 @@ impl Play {
             Box::new(scene_system) as Box<dyn SystemCaller<MyWorld>>,
         ];
 
-        Play {
-            pass,
-            world,
-            systems,
-        }
+        Play { world, systems }
     }
 }
 

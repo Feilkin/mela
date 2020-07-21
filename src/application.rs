@@ -19,17 +19,25 @@ use crate::debug::DebugContext;
 use crate::game::Playable;
 use crate::gfx::{default_render_pipelines, RenderContext};
 
+fn default_max_fps() -> u32 {
+    300
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
     pub window_size: [f32; 2],
-    pub vsync: Option<bool>,
+    #[serde(default)]
+    pub vsync: bool,
+    #[serde(default = "default_max_fps")]
+    pub max_fps: u32,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Settings {
             window_size: [1280., 720.],
-            vsync: Some(true),
+            vsync: true,
+            max_fps: 300,
         }
     }
 }
@@ -121,7 +129,7 @@ impl<G: 'static + Playable> Application<G> {
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
-            present_mode: if self.settings.vsync.unwrap_or(true) {
+            present_mode: if self.settings.vsync {
                 wgpu::PresentMode::Fifo
             } else {
                 wgpu::PresentMode::Mailbox
@@ -136,12 +144,17 @@ impl<G: 'static + Playable> Application<G> {
         );
         let mut game = self.game;
         let mut last_update = Instant::now();
+        let update_interval = Duration::from_secs_f64(1. / self.settings.max_fps as f64);
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Poll;
 
             match event {
                 Event::LoopDestroyed => return,
-                Event::MainEventsCleared => window.request_redraw(),
+                Event::MainEventsCleared => {
+                    if last_update.elapsed() >= update_interval {
+                        window.request_redraw()
+                    }
+                }
                 Event::RedrawRequested(_) => {
                     if let Ok(frame) = swap_chain.get_next_texture() {
                         let update_encoder =
