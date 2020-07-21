@@ -13,6 +13,7 @@ pub struct Default {
     model_bind_group_layout: wgpu::BindGroupLayout,
     pipeline: wgpu::RenderPipeline,
     depth_texture_view: wgpu::TextureView,
+    multisample_texture: wgpu::TextureView,
 }
 
 impl Default {
@@ -29,9 +30,24 @@ impl Default {
             },
             array_layer_count: 1,
             mip_level_count: 1,
-            sample_count: 1,
+            sample_count: 4,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Depth32Float,
+            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+        });
+
+        let multisample_texture = render_ctx.device.create_texture(&wgpu::TextureDescriptor {
+            label: None,
+            size: wgpu::Extent3d {
+                width: render_ctx.screen_size.0,
+                height: render_ctx.screen_size.1,
+                depth: 1,
+            },
+            array_layer_count: 1,
+            mip_level_count: 1,
+            sample_count: 4,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8UnormSrgb,
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
         });
 
@@ -40,6 +56,7 @@ impl Default {
             global_bind_group_layout,
             model_bind_group_layout,
             depth_texture_view: depth_texture.create_default_view(),
+            multisample_texture: multisample_texture.create_default_view(),
         }
     }
 
@@ -166,8 +183,8 @@ where
             .encoder
             .begin_render_pass(&wgpu::RenderPassDescriptor {
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &render_ctx.frame,
-                    resolve_target: None,
+                    attachment: &self.multisample_texture,
+                    resolve_target: Some(&render_ctx.frame),
                     load_op: wgpu::LoadOp::Clear,
                     store_op: wgpu::StoreOp::Store,
                     clear_color: wgpu::Color::BLACK,

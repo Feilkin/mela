@@ -26,5 +26,7 @@ layout(location = 2) in vec2 fragTexCoord;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = materialsDefinitions.materials[model.materialIndex].baseColor * fragColor * min(dot(fragNormal, vec3(0, 0, 1)) + 0.3, 1);
+    vec3 lightDirection = normalize(vec3(0.2, 0, 0.8));
+    vec4 transformedNormal = model.transform * vec4(fragNormal, 1.0);
+    outColor = materialsDefinitions.materials[model.materialIndex].baseColor * fragColor * max(min(dot(transformedNormal.xyz, lightDirection), 1), 0.1);
 }
