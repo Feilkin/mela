@@ -155,7 +155,7 @@ impl SceneSystem<DefaultMesh> {
                 // TODO: implement custom attributes
                 if attributes.ball.unwrap_or(0) > 0 {
                     let collider_desc =
-                        ColliderDesc::new(ShapeHandle::new(Ball::new(0.1f32))).density(1.0);
+                        ColliderDesc::new(ShapeHandle::new(Ball::new(1.0f32))).density(1.0);
 
                     entity_builder = entity_builder.with_component(PhysicsBody {
                         body_status: BodyStatus::Dynamic,
@@ -171,6 +171,8 @@ impl SceneSystem<DefaultMesh> {
                     let mut indices = Vec::new();
 
                     for primitive in mesh.primitives() {
+                        let index_offset = vertices.len();
+
                         primitive
                             .attributes()
                             .find(|(semantic, _)| match semantic {
@@ -206,6 +208,7 @@ impl SceneSystem<DefaultMesh> {
                                 }
                             })
                             .unwrap();
+
                         primitive
                             .indices()
                             .map(|accessor| {
@@ -233,7 +236,11 @@ impl SceneSystem<DefaultMesh> {
                                             .unwrap(),
                                     );
 
-                                    indices.push(Point3::new(x as usize, y as usize, z as usize));
+                                    indices.push(Point3::new(
+                                        index_offset + x as usize,
+                                        index_offset + y as usize,
+                                        index_offset + z as usize,
+                                    ));
                                 }
                             })
                             .unwrap();
