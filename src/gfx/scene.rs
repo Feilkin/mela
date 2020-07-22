@@ -7,6 +7,7 @@ use gltf::buffer::Source;
 use gltf::camera::Projection;
 use wgpu::Buffer;
 
+use crate::gfx::light::LightData;
 use crate::gfx::material::Materials;
 use crate::gfx::mesh::DefaultMesh;
 use crate::gfx::primitives::MVP;
@@ -18,6 +19,7 @@ pub trait Scene {
     fn camera(&self) -> MVP;
     fn meshes<'a, 's: 'a>(&'s self) -> Self::MeshIter<'a>;
     fn materials(&self) -> &wgpu::Buffer;
+    fn lights(&self) -> &[LightData];
 }
 
 pub struct DefaultScene<M: Mesh> {
@@ -41,6 +43,10 @@ impl<M: Mesh> Scene for DefaultScene<M> {
 
     fn materials(&self) -> &wgpu::Buffer {
         self.materials_buffer.as_ref()
+    }
+
+    fn lights(&self) -> &[LightData] {
+        &[]
     }
 }
 

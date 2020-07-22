@@ -11,6 +11,7 @@ use serde::export::Formatter;
 use crate::ecs::system::{Read, SystemData, Write};
 use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{Component, ComponentStorage, RwAccess};
+use crate::gfx::light::DirectionalLight;
 use crate::gfx::Mesh;
 
 #[derive(Clone, Debug)]
@@ -51,3 +52,10 @@ impl<M: Mesh + Send + Sync> std::fmt::Debug for MeshComponent<M> {
 }
 
 impl<M: Mesh + Send + Sync> Component for MeshComponent<M> {}
+
+#[derive(Debug)]
+pub struct LightComponent {
+    pub light: DirectionalLight,
+}
+
+impl Component for LightComponent {}

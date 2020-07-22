@@ -11,7 +11,7 @@ use mela::ecs::world::World;
 use mela::game::IoState;
 use mela::gfx::pass::Pass;
 use mela::gfx::primitives::{Quad, Vertex, MVP};
-use mela::gfx::{pass::Default as DefaultPass, DefaultMesh, DefaultScene, RenderContext};
+use mela::gfx::{pass::DefaultPass, DefaultMesh, DefaultScene, RenderContext};
 use mela::state::State;
 
 use crate::states::loading::GameAssets;

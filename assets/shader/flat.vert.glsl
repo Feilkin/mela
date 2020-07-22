@@ -22,7 +22,7 @@ layout(location = 2) out vec2 fragTexCoord;
 
 void main() {
     gl_Position = globals.proj * globals.view * model.transform *  vec4(inPosition, 1.0);
-    fragNormal = inNormal;
+    fragNormal = mat3(model.transform) * inNormal;
     fragColor = vec4(1.0);
     fragTexCoord = inTexCoord;
 }

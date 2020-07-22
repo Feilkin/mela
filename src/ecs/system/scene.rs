@@ -6,24 +6,23 @@ use std::time::Duration;
 
 use gltf::camera::Projection;
 use gltf::Semantic;
-use nalgebra::{Isometry3, Matrix4, Point3, Vector3};
+use nalgebra::{Isometry3, Matrix4, Point3, Quaternion, Unit, UnitQuaternion, Vector3, Vector4};
 use ncollide3d::shape::{Ball, Compound, ShapeHandle, TriMesh};
 use nphysics3d::material::{BasicMaterial, MaterialHandle};
 use nphysics3d::object::{BodyStatus, ColliderDesc};
 use wgpu::Buffer;
 
 use crate::asset::scene::NodeAttributes;
-use crate::ecs::component::{MeshComponent, PhysicsBody, Transform};
+use crate::ecs::component::{LightComponent, MeshComponent, PhysicsBody, Transform};
 use crate::ecs::system::Read;
 use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{ReadAccess, System};
 use crate::game::IoState;
+use crate::gfx::light::{DirectionalLight, LightData};
 use crate::gfx::material::Materials;
 use crate::gfx::pass::Pass;
 use crate::gfx::primitives::MVP;
-use crate::gfx::{
-    pass::Default as DefaultPass, DefaultMesh, DefaultScene, Mesh, RenderContext, Scene,
-};
+use crate::gfx::{pass::DefaultPass, DefaultMesh, DefaultScene, Mesh, RenderContext, Scene};
 
 pub struct SceneSystem<M: Mesh> {
     meshes: Vec<MeshWrapper<M>>,
@@ -31,6 +30,7 @@ pub struct SceneSystem<M: Mesh> {
     materials: Materials,
     materials_buffer: Arc<wgpu::Buffer>,
     camera: MVP,
+    lights: Vec<LightData>,
     pass: DefaultPass,
 }
 
@@ -85,7 +85,8 @@ impl SceneSystem<DefaultMesh> {
         W: World
             + WorldStorage<MeshComponent<DefaultMesh>>
             + WorldStorage<Transform<f32>>
-            + WorldStorage<PhysicsBody<f32>>,
+            + WorldStorage<PhysicsBody<f32>>
+            + WorldStorage<LightComponent>,
     {
         let pass = DefaultPass::new(render_ctx);
         // upload buffers to GPU
@@ -150,7 +151,8 @@ impl SceneSystem<DefaultMesh> {
             .expect("no scenes");
 
         for node in document.default_scene().unwrap().nodes() {
-            let mut entity_builder = world.add_entity();
+            let transform = Transform(node.transform().matrix().into());
+            let mut entity_builder = world.add_entity().with_component(transform);
 
             if let Some(extras) = node.extras() {
                 let attributes: NodeAttributes = serde_json::from_str(extras.get()).unwrap();
@@ -266,13 +268,35 @@ impl SceneSystem<DefaultMesh> {
                     .into_iter()
                     .map(|p| Arc::new(DefaultMesh::from_gltf(p, render_ctx, &gpu_buffers)))
                     .collect();
-
-                let transform = Transform(node.transform().matrix().into());
                 let mesh_component = MeshComponent { primitives };
 
-                entity_builder = entity_builder
-                    .with_component(transform)
-                    .with_component(mesh_component)
+                entity_builder = entity_builder.with_component(mesh_component)
+            }
+
+            if let Some(light_desc) = node.light() {
+                match light_desc.kind() {
+                    gltf::khr_lights_punctual::Kind::Directional => {
+                        let rotation: Unit<Quaternion<f32>> = Unit::new_normalize(
+                            Quaternion::from(Vector4::from(node.transform().decomposed().1)),
+                        );
+                        let direction: [f32; 3] = UnitQuaternion::look_at_rh(
+                            &rotation.transform_vector(&Vector3::new(0., 0., -1.)),
+                            &Vector3::y(),
+                        )
+                        .transform_vector(&Vector3::new(0., -1., 0.))
+                        .into();
+
+                        let light = DirectionalLight::new(
+                            direction,
+                            light_desc.color(),
+                            light_desc.intensity(),
+                        );
+
+                        entity_builder =
+                            entity_builder.with_component(LightComponent { light: light })
+                    }
+                    _ => unimplemented!(),
+                }
             }
 
             world = entity_builder.build();
@@ -281,6 +305,7 @@ impl SceneSystem<DefaultMesh> {
         (
             SceneSystem {
                 meshes: vec![],
+                lights: vec![],
                 buffers: gpu_buffers,
                 materials,
                 materials_buffer,
@@ -294,9 +319,13 @@ impl SceneSystem<DefaultMesh> {
 
 impl<W: World, M: 'static + Mesh + Send + Sync> System<W> for SceneSystem<M>
 where
-    W: WorldStorage<MeshComponent<M>> + WorldStorage<Transform<f32>>,
+    W: WorldStorage<MeshComponent<M>> + WorldStorage<Transform<f32>> + WorldStorage<LightComponent>,
 {
-    type SystemData<'a> = (Read<'a, MeshComponent<M>>, Read<'a, Transform<f32>>);
+    type SystemData<'a> = (
+        Read<'a, MeshComponent<M>>,
+        Read<'a, Transform<f32>>,
+        Read<'a, LightComponent>,
+    );
 
     fn name(&self) -> &'static str {
         "SceneSystem"
@@ -304,12 +333,13 @@ where
 
     fn update<'f>(
         &mut self,
-        (mesh_reader, transform_reader): Self::SystemData<'f>,
+        (mesh_reader, transform_reader, light_reader): Self::SystemData<'f>,
         delta: Duration,
         io_state: &IoState,
         render_ctx: &mut RenderContext,
     ) -> () {
         self.meshes.clear();
+        self.lights.clear();
 
         for (entity, mesh) in mesh_reader.iter() {
             let transform = transform_reader
@@ -321,6 +351,14 @@ where
                     transform: *transform.clone(),
                 });
             }
+        }
+
+        for (entity, light) in light_reader.iter() {
+            let transform = transform_reader
+                .fetch(entity)
+                .expect("should have transform");
+
+            self.lights.push(light.light.light_data(transform));
         }
     }
 
@@ -342,5 +380,9 @@ impl<M: Mesh> Scene for SceneSystem<M> {
 
     fn materials(&self) -> &Buffer {
         self.materials_buffer.as_ref()
+    }
+
+    fn lights(&self) -> &[LightData] {
+        &self.lights
     }
 }

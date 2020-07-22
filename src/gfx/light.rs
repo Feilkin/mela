@@ -1,39 +1,78 @@
 //! 2D raycast lighting and more maybe
 
+use crate::gfx::RenderContext;
+use nalgebra::{
+    Isometry3, Matrix4, Point3, Quaternion, Rotation3, Translation, Translation3, UnitQuaternion,
+    Vector, Vector3,
+};
+use wgpu::TextureDescriptor;
 use zerocopy::{AsBytes, FromBytes};
 
-#[derive(Debug, Clone, Copy, AsBytes, FromBytes, Default)]
+/// Wrapper for data sent to the GPU
+#[derive(Debug, Default, Clone, Copy, PartialEq, AsBytes, FromBytes)]
 #[repr(C)]
-pub struct Light {
-    pub position: [f32; 3],
-    pub radius: f32,
+pub struct LightData {
+    pub view_matrix: [[f32; 4]; 4],
+    pub direction: [f32; 3],
+    pub _padding: f32,
     pub color: [f32; 3],
-    pub strength: f32,
-    pub angle: f32,
-    pub sector: f32,
-    pub _padding: [f32; 2],
+    pub intensity: f32,
 }
 
-#[derive(Debug, Clone, Copy, AsBytes, FromBytes)]
-#[repr(C)]
-pub struct Lights {
-    lights: [Light; 30],
-    num_lights: u32,
+/// Direction light source, like sun :)
+#[derive(Debug, Clone, Default)]
+pub struct DirectionalLight {
+    direction: [f32; 3],
+    color: [f32; 3],
+    intensity: f32,
 }
 
-impl Lights {
-    pub fn new(lights: &[Light]) -> Lights {
-        assert!(lights.len() <= 30);
-
-        let mut light_array = [Light::default(); 30];
-
-        for i in 0..lights.len() {
-            light_array[i] = lights[i];
+// constructors
+impl DirectionalLight {
+    pub fn new(direction: [f32; 3], color: [f32; 3], intensity: f32) -> DirectionalLight {
+        DirectionalLight {
+            direction,
+            color,
+            intensity,
         }
+    }
+}
 
-        Lights {
-            lights: light_array,
-            num_lights: lights.len() as u32,
+// public methods
+// TODO: abstract to a trait
+impl DirectionalLight {
+    pub fn light_data(&self, transform: &Matrix4<f32>) -> LightData {
+        LightData {
+            view_matrix: self.view_matrix(transform).into(),
+            direction: self.direction,
+            color: self.color,
+            intensity: self.intensity,
+            _padding: 0.,
         }
+    }
+}
+
+// private methods
+impl DirectionalLight {
+    fn view_matrix(&self, transform: &Matrix4<f32>) -> Matrix4<f32> {
+        let near_plane = 0.001f32;
+        let far_plane = 100.0f32;
+        let light_projection =
+            Matrix4::new_orthographic(-25., 25., -25., 25., near_plane, far_plane);
+
+        let isometry: Isometry3<f32> = nalgebra::try_convert_ref(transform).unwrap();
+
+        light_projection
+            * (UnitQuaternion::look_at_rh(
+                &isometry
+                    .rotation
+                    .transform_vector(&Vector3::new(0., 0., -1.)),
+                &Vector3::y(),
+            ) * Translation3::from(Vector3::new(
+                -isometry.translation.x,
+                -isometry.translation.y,
+                -isometry.translation.z,
+            )))
+            .to_homogeneous()
     }
 }

@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use nalgebra::Vector3;
 
-use mela::ecs::component::{MeshComponent, PhysicsBody, Transform};
+use mela::ecs::component::{LightComponent, MeshComponent, PhysicsBody, Transform};
 use mela::ecs::system::physics::PhysicsSystem;
 use mela::ecs::system::SystemCaller;
 use mela::ecs::world::WorldStorage;
@@ -84,5 +84,13 @@ impl WorldStorage<MeshComponent<DefaultMesh>> for MyWorld {
 
     fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage {
         &self.components.meshes
+    }
+}
+
+impl WorldStorage<LightComponent> for MyWorld {
+    type Storage = VecStorage<LightComponent>;
+
+    fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage {
+        &self.components.lights
     }
 }

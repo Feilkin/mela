@@ -5,21 +5,23 @@ use std::sync::Arc;
 
 use wgpu::BindGroup;
 
+use crate::gfx::light::LightData;
 use crate::gfx::material::Materials;
-use crate::gfx::pass::Pass;
+use crate::gfx::pass::{Pass, ShadowPass};
 use crate::gfx::primitives::MVP;
 use crate::gfx::{default_flat_pipeline, Mesh, RenderContext, Scene};
 
-pub struct Default {
+pub struct DefaultPass {
     global_bind_group_layout: wgpu::BindGroupLayout,
     model_bind_group_layout: wgpu::BindGroupLayout,
     pipeline: wgpu::RenderPipeline,
     depth_texture_view: wgpu::TextureView,
     multisample_texture: wgpu::TextureView,
+    shadow_pass: ShadowPass,
 }
 
-impl Default {
-    pub fn new(render_ctx: &mut RenderContext) -> Default {
+impl DefaultPass {
+    pub fn new(render_ctx: &mut RenderContext) -> DefaultPass {
         let (pipeline, global_bind_group_layout, model_bind_group_layout) =
             default_flat_pipeline(render_ctx.device);
 
@@ -53,12 +55,13 @@ impl Default {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
         });
 
-        Default {
+        DefaultPass {
             pipeline,
             global_bind_group_layout,
             model_bind_group_layout,
             depth_texture_view: depth_texture.create_default_view(),
             multisample_texture: multisample_texture.create_default_view(),
+            shadow_pass: ShadowPass::new(render_ctx),
         }
     }
 
@@ -75,7 +78,27 @@ impl Default {
             .device
             .create_buffer_with_data(&camera.as_bytes(), wgpu::BufferUsage::UNIFORM);
 
-        let material_buffer = scene.materials();
+        #[derive(AsBytes)]
+        #[repr(C)]
+        struct Lights {
+            num_lights: u32,
+            padding: [f32; 3],
+            lights: [LightData; ShadowPass::MAX_LIGHTS],
+        }
+
+        let mut lights = Lights {
+            num_lights: scene.lights().len() as u32,
+            padding: [0.0; 3],
+            lights: [LightData::default(); ShadowPass::MAX_LIGHTS],
+        };
+
+        for (i, light) in scene.lights().iter().enumerate() {
+            lights.lights[i] = light.clone();
+        }
+
+        let light_buffer = render_ctx
+            .device
+            .create_buffer_with_data(&lights.as_bytes(), wgpu::BufferUsage::UNIFORM);
 
         render_ctx
             .device
@@ -94,6 +117,13 @@ impl Default {
                         resource: wgpu::BindingResource::Buffer {
                             buffer: scene.materials(),
                             range: 0..std::mem::size_of::<Materials>() as u64,
+                        },
+                    },
+                    wgpu::Binding {
+                        binding: 2,
+                        resource: wgpu::BindingResource::Buffer {
+                            buffer: &light_buffer,
+                            range: 0..std::mem::size_of::<Lights>() as u64,
                         },
                     },
                 ],
@@ -139,11 +169,14 @@ impl Default {
     }
 }
 
-impl<S> Pass<S> for Default
+impl<S> Pass<S> for DefaultPass
 where
     S: Scene,
 {
     fn render(&self, scene: &S, render_ctx: &mut RenderContext) -> () {
+        // fist, draw shadows
+        self.shadow_pass.render(scene, render_ctx);
+
         let global_bind_group = self.global_bind_group(scene, render_ctx);
 
         // collect buffers and make bind groups
