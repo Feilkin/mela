@@ -19,6 +19,7 @@ use crate::states::States;
 use crate::world::MyWorld;
 
 pub struct Play {
+    paused: bool,
     world: MyWorld,
     systems: Vec<Box<dyn SystemCaller<MyWorld>>>,
 }
@@ -41,7 +42,11 @@ impl Play {
             Box::new(scene_system) as Box<dyn SystemCaller<MyWorld>>,
         ];
 
-        Play { world, systems }
+        Play {
+            world,
+            systems,
+            paused: true,
+        }
     }
 }
 
@@ -59,6 +64,28 @@ impl State for Play {
         render_ctx: &mut RenderContext,
         debug_ctx: &mut DebugContext,
     ) -> Self::Wrapper {
+        if io_state.pressed(0x19) {
+            return if self.paused {
+                render_ctx.window.set_cursor_visible(false);
+
+                States::Play(Play {
+                    paused: false,
+                    ..self
+                })
+            } else {
+                render_ctx.window.set_cursor_visible(true);
+
+                States::Play(Play {
+                    paused: true,
+                    ..self
+                })
+            };
+        }
+
+        if self.paused {
+            return States::Play(self);
+        }
+
         let Play {
             world, mut systems, ..
         } = self;

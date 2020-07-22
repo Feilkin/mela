@@ -177,6 +177,7 @@ impl<G: 'static + Playable> Application<G> {
                                 encoder: update_encoder,
                                 device: &device,
                                 pipelines: &render_pipelines,
+                                window: &window,
                             };
                             let mut debug_ctx = DebugContext {};
 

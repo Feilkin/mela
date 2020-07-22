@@ -43,9 +43,9 @@ impl Playable for Hello3dGame {
             mut io_state,
         } = self;
 
-        io_state.update();
-
         let new_state = state.update(delta, &io_state, render_ctx, debug_ctx);
+
+        io_state.update();
 
         Hello3dGame {
             state: new_state,
@@ -59,6 +59,16 @@ impl Playable for Hello3dGame {
                 event: WindowEvent::CloseRequested,
                 ..
             } => Some(ControlFlow::Exit),
+            Event::WindowEvent {
+                event: WindowEvent::KeyboardInput { input, .. },
+                ..
+            } => {
+                self.io_state.set_key(
+                    input.scancode,
+                    input.state == winit::event::ElementState::Pressed,
+                );
+                None
+            }
             _ => None,
         }
     }

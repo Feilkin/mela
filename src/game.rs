@@ -47,14 +47,12 @@ impl IoState {
             .get(&key)
             .and_then(|last_state| {
                 let cur_state = self.keys.get(&key).unwrap_or(&false);
-                Some(*last_state == *cur_state)
+                Some(*last_state == false && *cur_state == true)
             })
             .unwrap_or(false)
     }
 
     pub fn update(&mut self) {
-        let new_state_keys = self.keys.clone();
-        self.last_frame_keys = new_state_keys.clone();
-        self.keys = new_state_keys;
+        self.last_frame_keys = self.keys.clone();
     }
 }

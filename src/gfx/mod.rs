@@ -25,12 +25,13 @@ mod spritebatch;
 pub type Texture = Rc<wgpu::Texture>;
 
 /// All the stuff that is needed to draw to screen
-pub struct RenderContext<'s, 'p, 'd> {
+pub struct RenderContext<'s, 'p, 'd, 'w> {
     pub frame: &'s wgpu::TextureView,
     pub encoder: wgpu::CommandEncoder,
     pub device: &'d wgpu::Device,
     pub pipelines: &'p DefaultPipelines,
     pub screen_size: (u32, u32),
+    pub window: &'w winit::window::Window,
 }
 
 pub struct DefaultPipelines {
