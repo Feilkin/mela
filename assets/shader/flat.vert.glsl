@@ -19,9 +19,11 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 0) out vec3 fragNormal;
 layout(location = 1) out vec4 fragColor;
 layout(location = 2) out vec2 fragTexCoord;
+layout(location = 3) out vec4 vertexPosition;
 
 void main() {
-    gl_Position = globals.proj * globals.view * model.transform *  vec4(inPosition, 1.0);
+    vertexPosition = model.transform *  vec4(inPosition, 1.0);
+    gl_Position = globals.proj * globals.view * vertexPosition;
     fragNormal = mat3(model.transform) * inNormal;
     fragColor = vec4(1.0);
     fragTexCoord = inTexCoord;

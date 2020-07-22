@@ -34,6 +34,10 @@ impl ShadowPass {
         }
     }
 
+    pub fn shadow_view(&self) -> (&wgpu::TextureView, &wgpu::Sampler) {
+        (&self.shadow_view, &self.shadow_sampler)
+    }
+
     fn pipeline(
         render_ctx: &mut RenderContext,
     ) -> (

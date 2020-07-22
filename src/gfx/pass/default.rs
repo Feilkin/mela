@@ -100,6 +100,8 @@ impl DefaultPass {
             .device
             .create_buffer_with_data(&lights.as_bytes(), wgpu::BufferUsage::UNIFORM);
 
+        let (shadow_view, shadow_sampler) = self.shadow_pass.shadow_view();
+
         render_ctx
             .device
             .create_bind_group(&wgpu::BindGroupDescriptor {
@@ -125,6 +127,14 @@ impl DefaultPass {
                             buffer: &light_buffer,
                             range: 0..std::mem::size_of::<Lights>() as u64,
                         },
+                    },
+                    wgpu::Binding {
+                        binding: 3,
+                        resource: wgpu::BindingResource::TextureView(shadow_view),
+                    },
+                    wgpu::Binding {
+                        binding: 4,
+                        resource: wgpu::BindingResource::Sampler(shadow_sampler),
                     },
                 ],
                 label: None,

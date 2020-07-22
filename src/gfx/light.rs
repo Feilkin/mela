@@ -56,7 +56,7 @@ impl DirectionalLight {
 impl DirectionalLight {
     fn view_matrix(&self, transform: &Matrix4<f32>) -> Matrix4<f32> {
         let near_plane = 0.001f32;
-        let far_plane = 100.0f32;
+        let far_plane = 120.0f32;
         let light_projection =
             Matrix4::new_orthographic(-25., 25., -25., 25., near_plane, far_plane);
 
