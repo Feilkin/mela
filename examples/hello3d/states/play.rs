@@ -65,21 +65,11 @@ impl State for Play {
         debug_ctx: &mut DebugContext,
     ) -> Self::Wrapper {
         if io_state.pressed(0x19) {
-            return if self.paused {
-                render_ctx.window.set_cursor_visible(false);
-
-                States::Play(Play {
-                    paused: false,
-                    ..self
-                })
-            } else {
-                render_ctx.window.set_cursor_visible(true);
-
-                States::Play(Play {
-                    paused: true,
-                    ..self
-                })
-            };
+            render_ctx.window.set_cursor_visible(!self.paused);
+            return States::Play(Play {
+                paused: !self.paused,
+                ..self
+            });
         }
 
         if self.paused {

@@ -18,7 +18,7 @@
                         1,
                         1
                     ],
-                    "intensity" : 4.509999752044678,
+                    "intensity" : 5,
                     "type" : "directional",
                     "name" : "Light"
                 },
@@ -28,7 +28,7 @@
                         0.6583467125892639,
                         0.33682775497436523
                     ],
-                    "intensity" : 1.1699999570846558,
+                    "intensity" : 2,
                     "type" : "directional",
                     "name" : "Sun"
                 }

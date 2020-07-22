@@ -31,6 +31,8 @@ pub struct PhysicsBody<T: RealField> {
     pub colliders: Vec<ColliderDesc<T>>,
     pub body_status: nphysics3d::object::BodyStatus,
     pub mass: T,
+    pub linear_damping: T,
+    pub angular_damping: T,
 }
 
 impl<T: RealField> std::fmt::Debug for PhysicsBody<T> {

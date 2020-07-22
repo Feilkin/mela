@@ -35,10 +35,12 @@ pub struct PhysicsSystem<T: RealField> {
 
 impl<T: RealField> PhysicsSystem<T> {
     pub fn new(gravity: Vector3<T>) -> PhysicsSystem<T> {
+        let mut mechanical_world = DefaultMechanicalWorld::new(gravity);
+
         PhysicsSystem {
             update_interval: Duration::from_secs_f64(1. / 60.),
             update_timer: Duration::new(0, 0),
-            mechanical_world: DefaultMechanicalWorld::new(gravity),
+            mechanical_world,
             geometrical_world: DefaultGeometricalWorld::new(),
             bodies: DefaultBodySet::new(),
             colliders: DefaultColliderSet::new(),
@@ -86,6 +88,8 @@ where
                     .mass(body_desc.mass)
                     .status(body_desc.body_status)
                     .position(position)
+                    .linear_damping(body_desc.linear_damping)
+                    .angular_damping(body_desc.angular_damping)
                     .build();
 
                 let body_handle = self.bodies.insert(body);

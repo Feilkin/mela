@@ -161,12 +161,14 @@ impl SceneSystem<DefaultMesh> {
                 if attributes.ball.unwrap_or(0) > 0 {
                     let collider_desc = ColliderDesc::new(ShapeHandle::new(Ball::new(1.0f32)))
                         .density(1.0)
-                        .material(MaterialHandle::new(BasicMaterial::new(0.8, 0.4)));
+                        .material(MaterialHandle::new(BasicMaterial::new(0.85, 0.4)));
 
                     entity_builder = entity_builder.with_component(PhysicsBody {
                         body_status: BodyStatus::Dynamic,
                         colliders: vec![collider_desc],
-                        mass: 1.0,
+                        mass: 45.0,
+                        linear_damping: 0.0,
+                        angular_damping: 0.0,
                     });
                 }
 
@@ -255,9 +257,13 @@ impl SceneSystem<DefaultMesh> {
                     let mesh = TriMesh::new(vertices, indices, None);
 
                     entity_builder = entity_builder.with_component(PhysicsBody {
-                        colliders: vec![ColliderDesc::new(ShapeHandle::new(mesh))],
+                        colliders: vec![
+                            ColliderDesc::new(ShapeHandle::new(mesh)).ccd_enabled(false)
+                        ],
                         mass: f32::INFINITY,
+                        linear_damping: 0.0,
                         body_status: BodyStatus::Dynamic,
+                        angular_damping: 0.0,
                     });
                 }
             }

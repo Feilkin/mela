@@ -72,7 +72,10 @@ void main() {
         color += shadow * diffuse * light.color.rgb * (light.color.a / 5.0);
     }
 
-    vec4 materialColor = materialsDefinitions.materials[model.materialIndex].baseColor;
+    vec3 material_color = materialsDefinitions.materials[model.materialIndex].baseColor.rgb;
 
-    outColor = materialColor * fragColor * vec4(color, 1.0);
+    vec3 hdr_color = material_color * fragColor.rgb * color;
+    vec3 mapped = hdr_color / (hdr_color + vec3(1.0));
+
+    outColor = vec4(mapped, 1.0);
 }
