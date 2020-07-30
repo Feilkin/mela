@@ -6,7 +6,9 @@ use std::time::Duration;
 
 use gltf::camera::Projection;
 use gltf::Semantic;
-use nalgebra::{Isometry3, Matrix4, Point3, Quaternion, Unit, UnitQuaternion, Vector3, Vector4};
+use nalgebra::{
+    Isometry3, Matrix4, Point3, Quaternion, Rotation3, Unit, UnitQuaternion, Vector3, Vector4,
+};
 use ncollide3d::shape::{Ball, Compound, ShapeHandle, TriMesh};
 use nphysics3d::material::{BasicMaterial, MaterialHandle};
 use nphysics3d::object::{BodyStatus, ColliderDesc};
@@ -161,8 +163,9 @@ impl SceneSystem<DefaultMesh> {
 
                 // TODO: implement custom attributes
                 if attributes.ball.unwrap_or(0) > 0 {
-                    let collider_desc = ColliderDesc::new(ShapeHandle::new(Ball::new(1.0f32)))
+                    let collider_desc = ColliderDesc::new(ShapeHandle::new(Ball::new(0.010f32)))
                         .density(1.0)
+                        .ccd_enabled(true)
                         .material(MaterialHandle::new(BasicMaterial::new(0.85, 0.4)));
 
                     entity_builder = entity_builder.with_component(PhysicsBody {
@@ -363,6 +366,14 @@ where
                 .expect("should have transform");
 
             self.lights.push(light.light.light_data(transform));
+        }
+
+        let mut view_matrix: Matrix4<f32> = self.camera.view.into();
+        view_matrix = view_matrix * Rotation3::new(Vector3::z() * 0.001).to_homogeneous();
+
+        self.camera = MVP {
+            view: view_matrix.into(),
+            ..self.camera
         }
     }
 

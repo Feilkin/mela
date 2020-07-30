@@ -1,5 +1,5 @@
 {
   "_README": "Use resolution with aspect ratio of 4:3 for best experience, for example [768, 576] or [1536, 1152]",
   "window_size": [1920, 1080],
-  "vsync": false
+  "vsync": true
 }
