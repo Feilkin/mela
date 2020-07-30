@@ -172,4 +172,6 @@ impl Mesh2D {
 pub struct MVP {
     pub view: [[f32; 4]; 4],
     pub proj: [[f32; 4]; 4],
+    pub camera_pos: [f32; 3],
+    pub _padding: f32,
 }

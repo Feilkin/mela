@@ -142,6 +142,8 @@ impl SceneSystem<DefaultMesh> {
         let camera = MVP {
             view: view.into(),
             proj: projection.into(),
+            camera_pos: camera_node.transform().decomposed().0,
+            _padding: 0.0,
         };
 
         // setup meshes
@@ -285,12 +287,8 @@ impl SceneSystem<DefaultMesh> {
                         let rotation: Unit<Quaternion<f32>> = Unit::new_normalize(
                             Quaternion::from(Vector4::from(node.transform().decomposed().1)),
                         );
-                        let direction: [f32; 3] = UnitQuaternion::look_at_rh(
-                            &rotation.transform_vector(&Vector3::new(0., 0., -1.)),
-                            &Vector3::y(),
-                        )
-                        .transform_vector(&Vector3::new(0., -1., 0.))
-                        .into();
+                        let direction: [f32; 3] =
+                            rotation.transform_vector(&Vector3::new(0., 0., -1.)).into();
 
                         let light = DirectionalLight::new(
                             direction,

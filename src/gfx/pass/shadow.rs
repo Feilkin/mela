@@ -15,7 +15,7 @@ pub struct ShadowPass {
 }
 
 impl ShadowPass {
-    pub const MAX_LIGHTS: usize = 256;
+    pub const MAX_LIGHTS: usize = 32;
     pub const SHADOW_RES: u32 = 1024;
 
     pub fn new(render_ctx: &mut RenderContext) -> ShadowPass {
@@ -318,7 +318,7 @@ where
                 );
 
                 rpass.set_vertex_buffer(
-                    i as u32,
+                    0,
                     &mesh.vertex_buffer.0,
                     mesh.vertex_buffer.1,
                     mesh.vertex_buffer.2,

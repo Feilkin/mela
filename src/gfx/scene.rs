@@ -109,6 +109,8 @@ impl DefaultScene<DefaultMesh> {
         let camera = MVP {
             view: view.into(),
             proj: projection.into(),
+            camera_pos: camera_node.transform().decomposed().0,
+            _padding: 0.0,
         };
 
         // setup meshes
