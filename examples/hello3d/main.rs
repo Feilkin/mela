@@ -1,4 +1,5 @@
 //! 3D graphics demo
+#![feature(generic_associated_types)]
 
 use std::time::Duration;
 
@@ -15,6 +16,7 @@ use crate::states::States;
 
 mod components;
 mod states;
+mod systems;
 mod world;
 
 struct Hello3dGame {

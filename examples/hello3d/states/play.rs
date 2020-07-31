@@ -16,6 +16,7 @@ use mela::state::State;
 
 use crate::states::loading::GameAssets;
 use crate::states::States;
+use crate::systems::InputSystem;
 use crate::world::MyWorld;
 
 pub struct Play {
@@ -39,6 +40,7 @@ impl Play {
         let systems = vec![
             Box::new(PhysicsSystem::new(Vector3::z() * -9.81_f32))
                 as Box<dyn SystemCaller<MyWorld>>,
+            Box::new(InputSystem {}) as Box<dyn SystemCaller<MyWorld>>,
             Box::new(scene_system) as Box<dyn SystemCaller<MyWorld>>,
         ];
 
