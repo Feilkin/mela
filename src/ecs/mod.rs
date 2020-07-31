@@ -49,7 +49,7 @@ pub trait ReadAccess<'access, C: Component> {
 }
 
 /// An interface that describes write access to a Component
-pub trait WriteAccess<'w, C: Component> {
+pub trait WriteAccess<'access, C: Component> {
     /// sets value of Component for Entity
     fn set(&mut self, entity: Entity, value: C);
 
@@ -57,9 +57,12 @@ pub trait WriteAccess<'w, C: Component> {
     fn unset(&mut self, entity: Entity);
 
     /// mutable iterator over component storage
-    fn iter_mut<'a>(&'w mut self) -> Box<dyn Iterator<Item = (Entity, &'a mut C)> + 'a>
+    fn iter_mut<'borrow, 's>(
+        &'s mut self,
+    ) -> Box<dyn Iterator<Item = (Entity, &'borrow mut C)> + 'borrow>
     where
-        'w: 'a;
+        's: 'borrow,
+        'access: 's;
 
     /// clears this Component storage, unsetting the value for each Entity
     fn clear(&mut self);
@@ -166,9 +169,10 @@ impl<'v: 'w, 'w, C: Component> WriteAccess<'w, C> for VecWriter<'v, C> {
         self.data[index] = None;
     }
 
-    fn iter_mut<'a>(&'w mut self) -> Box<dyn Iterator<Item = (Entity, &'a mut C)> + 'a>
+    fn iter_mut<'a, 's>(&'s mut self) -> Box<dyn Iterator<Item = (Entity, &'a mut C)> + 'a>
     where
-        'w: 'a,
+        's: 'a,
+        'w: 's,
     {
         Box::new(self.data.iter_mut().enumerate().filter_map(
             |(index, maybe_val)| match maybe_val {
@@ -299,9 +303,10 @@ impl<'d: 'w, 'w, C: 'd + Component> WriteAccess<'w, C> for DequeWriter<'d, C> {
         unimplemented!()
     }
 
-    fn iter_mut<'a>(&'w mut self) -> Box<dyn Iterator<Item = (Entity, &'a mut C)> + 'a>
+    fn iter_mut<'a, 's>(&'s mut self) -> Box<dyn Iterator<Item = (Entity, &'a mut C)> + 'a>
     where
-        'w: 'a,
+        's: 'a,
+        'w: 's,
     {
         Box::new(self.data.iter_mut().map(|(e, c)| (e.clone(), c)))
     }

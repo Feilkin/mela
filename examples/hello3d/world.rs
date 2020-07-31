@@ -4,11 +4,11 @@ use std::time::Duration;
 
 use nalgebra::Vector3;
 
-use mela::ecs::component::{LightComponent, MeshComponent, PhysicsBody, Transform};
+use mela::ecs::component::{LightComponent, MeshComponent, OrbitCamera, PhysicsBody, Transform};
 use mela::ecs::system::physics::PhysicsSystem;
 use mela::ecs::system::SystemCaller;
 use mela::ecs::world::WorldStorage;
-use mela::ecs::{entity::EntityBuilder, world::World, Entity, VecStorage};
+use mela::ecs::{entity::EntityBuilder, world::World, DequeStorage, Entity, VecStorage};
 use mela::game::IoState;
 use mela::gfx::{DefaultMesh, RenderContext};
 
@@ -92,5 +92,13 @@ impl WorldStorage<LightComponent> for MyWorld {
 
     fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage {
         &self.components.lights
+    }
+}
+
+impl WorldStorage<OrbitCamera> for MyWorld {
+    type Storage = VecStorage<OrbitCamera>;
+
+    fn storage<'s, 'w: 's>(&'w self) -> &'s Self::Storage {
+        &self.components.cameras
     }
 }

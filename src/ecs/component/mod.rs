@@ -3,7 +3,7 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
-use nalgebra::{Matrix4, RealField, UnitQuaternion, Vector3};
+use nalgebra::{Isometry3, Matrix4, RealField, Rotation3, UnitQuaternion, Vector3};
 use ncollide3d::shape::ShapeHandle;
 use nphysics3d::object::ColliderDesc;
 use serde::export::Formatter;
@@ -61,3 +61,18 @@ pub struct LightComponent {
 }
 
 impl Component for LightComponent {}
+
+#[derive(Debug)]
+pub struct OrbitCamera {
+    pub distance: f32,
+    pub rotation: Rotation3<f32>,
+    pub projection: Matrix4<f32>,
+}
+
+impl OrbitCamera {
+    pub fn set_rotation(&mut self, rotation: Rotation3<f32>) -> () {
+        self.rotation = rotation;
+    }
+}
+
+impl Component for OrbitCamera {}

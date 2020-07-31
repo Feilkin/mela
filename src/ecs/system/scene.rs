@@ -15,7 +15,7 @@ use nphysics3d::object::{BodyStatus, ColliderDesc};
 use wgpu::Buffer;
 
 use crate::asset::scene::NodeAttributes;
-use crate::ecs::component::{LightComponent, MeshComponent, PhysicsBody, Transform};
+use crate::ecs::component::{LightComponent, MeshComponent, OrbitCamera, PhysicsBody, Transform};
 use crate::ecs::system::Read;
 use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{ReadAccess, System};
@@ -88,7 +88,8 @@ impl SceneSystem<DefaultMesh> {
             + WorldStorage<MeshComponent<DefaultMesh>>
             + WorldStorage<Transform<f32>>
             + WorldStorage<PhysicsBody<f32>>
-            + WorldStorage<LightComponent>,
+            + WorldStorage<LightComponent>
+            + WorldStorage<OrbitCamera>,
     {
         let pass = DefaultPass::new(render_ctx);
         // upload buffers to GPU
@@ -168,13 +169,22 @@ impl SceneSystem<DefaultMesh> {
                         .ccd_enabled(true)
                         .material(MaterialHandle::new(BasicMaterial::new(0.85, 0.4)));
 
-                    entity_builder = entity_builder.with_component(PhysicsBody {
-                        body_status: BodyStatus::Dynamic,
-                        colliders: vec![collider_desc],
-                        mass: 45.0,
-                        linear_damping: 0.0,
-                        angular_damping: 0.0,
-                    });
+                    let projection =
+                        nalgebra::Matrix4::new_perspective(16. / 9., 0.4710899940857267, 0.2, 100.);
+
+                    entity_builder = entity_builder
+                        .with_component(PhysicsBody {
+                            body_status: BodyStatus::Dynamic,
+                            colliders: vec![collider_desc],
+                            mass: 45.0,
+                            linear_damping: 0.0,
+                            angular_damping: 0.0,
+                        })
+                        .with_component(OrbitCamera {
+                            distance: 0.5,
+                            rotation: Rotation3::identity(),
+                            projection,
+                        });
                 }
 
                 if attributes.ground.unwrap_or(0) > 0 {
@@ -326,12 +336,16 @@ impl SceneSystem<DefaultMesh> {
 
 impl<W: World, M: 'static + Mesh + Send + Sync> System<W> for SceneSystem<M>
 where
-    W: WorldStorage<MeshComponent<M>> + WorldStorage<Transform<f32>> + WorldStorage<LightComponent>,
+    W: WorldStorage<MeshComponent<M>>
+        + WorldStorage<Transform<f32>>
+        + WorldStorage<LightComponent>
+        + WorldStorage<OrbitCamera>,
 {
     type SystemData<'a> = (
         Read<'a, MeshComponent<M>>,
         Read<'a, Transform<f32>>,
         Read<'a, LightComponent>,
+        Read<'a, OrbitCamera>,
     );
 
     fn name(&self) -> &'static str {
@@ -340,7 +354,7 @@ where
 
     fn update<'f>(
         &mut self,
-        (mesh_reader, transform_reader, light_reader): Self::SystemData<'f>,
+        (mesh_reader, transform_reader, light_reader, camera_reader): Self::SystemData<'f>,
         delta: Duration,
         io_state: &IoState,
         render_ctx: &mut RenderContext,
@@ -368,12 +382,30 @@ where
             self.lights.push(light.light.light_data(transform));
         }
 
-        let mut view_matrix: Matrix4<f32> = self.camera.view.into();
-        view_matrix = view_matrix * Rotation3::new(Vector3::z() * 0.001).to_homogeneous();
+        {
+            // update camera
+            let (entity, camera) = camera_reader.iter().next().expect("no camera!");
+            let camera_offset = camera
+                .rotation
+                .transform_vector(&(Vector3::y() * -camera.distance + Vector3::z() * 0.1));
 
-        self.camera = MVP {
-            view: view_matrix.into(),
-            ..self.camera
+            let transform = transform_reader.fetch(entity).unwrap().0.clone();
+            let entity_isometry: Isometry3<f32> = nalgebra::try_convert(transform).unwrap();
+            let translation = camera_offset + &entity_isometry.translation.vector;
+            let camera_position = translation.clone();
+
+            let view_matrix = nalgebra::Matrix4::look_at_rh(
+                &camera_position.into(),
+                &entity_isometry.translation.vector.into(),
+                &nalgebra::Vector3::z(),
+            );
+
+            self.camera = MVP {
+                view: view_matrix.into(),
+                proj: camera.projection.clone().into(),
+                camera_pos: camera_position.into(),
+                _padding: 0.0,
+            }
         }
     }
 

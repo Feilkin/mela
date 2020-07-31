@@ -1,6 +1,6 @@
 //! 3d example compnent definitions
 
-use mela::ecs::component::{LightComponent, MeshComponent, PhysicsBody, Transform};
+use mela::ecs::component::{LightComponent, MeshComponent, OrbitCamera, PhysicsBody, Transform};
 use mela::ecs::VecStorage;
 use mela::gfx::DefaultMesh;
 
@@ -10,4 +10,5 @@ pub(crate) struct MyComponents {
     pub physics_bodies: VecStorage<PhysicsBody<f32>>,
     pub meshes: VecStorage<MeshComponent<DefaultMesh>>,
     pub lights: VecStorage<LightComponent>,
+    pub cameras: VecStorage<OrbitCamera>,
 }

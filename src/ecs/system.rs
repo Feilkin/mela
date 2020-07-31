@@ -56,20 +56,19 @@ where
     }
 
     /// sets value of Component for Entity
-    fn set(&mut self, entity: Entity, value: C) {
+    pub fn set(&mut self, entity: Entity, value: C) {
         self.writer.set(entity, value)
     }
 
     /// unsets value of Component for Entity
-    fn unset(&mut self, entity: Entity) {
+    pub fn unset(&mut self, entity: Entity) {
         self.writer.unset(entity)
     }
 
     /// mutable iterator over component storage
-    fn iter_mut<'a>(&'access mut self) -> Box<dyn Iterator<Item = (Entity, &'a mut C)> + 'a>
-    where
-        'access: 'a,
-    {
+    pub fn iter_mut<'borrow, 's: 'borrow>(
+        &'s mut self,
+    ) -> Box<dyn Iterator<Item = (Entity, &'borrow mut C)> + 'borrow> {
         self.writer.iter_mut()
     }
 
@@ -133,6 +132,19 @@ where
 {
     fn get(world: &'a W) -> Self {
         (A::get(world), B::get(world), C::get(world))
+    }
+}
+
+impl<'a, A, B, C, D, W> SystemData<'a, W> for (A, B, C, D)
+where
+    A: SystemData<'a, W>,
+    B: SystemData<'a, W>,
+    C: SystemData<'a, W>,
+    D: SystemData<'a, W>,
+    W: World,
+{
+    fn get(world: &'a W) -> Self {
+        (A::get(world), B::get(world), C::get(world), D::get(world))
     }
 }
 
