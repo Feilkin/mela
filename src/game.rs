@@ -49,7 +49,7 @@ impl IoState {
                 let cur_state = self.keys.get(&key).unwrap_or(&false);
                 Some(*last_state == false && *cur_state == true)
             })
-            .unwrap_or(false)
+            .unwrap_or_else(|| *self.keys.get(&key).unwrap_or(&false))
     }
 
     pub fn update(&mut self) {
