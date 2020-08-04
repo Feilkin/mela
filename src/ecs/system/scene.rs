@@ -169,19 +169,26 @@ impl SceneSystem<DefaultMesh> {
                         .ccd_enabled(true)
                         .material(MaterialHandle::new(BasicMaterial::new(0.85, 0.4)));
 
-                    let projection =
-                        nalgebra::Matrix4::new_perspective(16. / 9., 0.4710899940857267, 0.2, 100.);
+                    let projection = nalgebra::Matrix4::new_perspective(
+                        16. / 9.,
+                        0.4710899940857267,
+                        0.20,
+                        100.,
+                    );
 
                     entity_builder = entity_builder
                         .with_component(PhysicsBody {
                             body_status: BodyStatus::Dynamic,
                             colliders: vec![collider_desc],
-                            mass: 45.0,
+                            mass: 0.045,
                             linear_damping: 0.0,
                             angular_damping: 0.0,
+                            handle: None,
                         })
                         .with_component(OrbitCamera {
                             distance: 0.5,
+                            max_distance: 10.0,
+                            min_distance: 0.2,
                             rotation: Rotation3::identity(),
                             projection,
                         });
@@ -279,6 +286,7 @@ impl SceneSystem<DefaultMesh> {
                         linear_damping: 0.0,
                         body_status: BodyStatus::Dynamic,
                         angular_damping: 0.0,
+                        handle: None,
                     });
                 }
             }
@@ -390,21 +398,23 @@ where
                 .transform_vector(&(Vector3::y() * -camera.distance + Vector3::z() * 0.1));
 
             let transform = transform_reader.fetch(entity).unwrap().0.clone();
-            let entity_isometry: Isometry3<f32> = nalgebra::try_convert(transform).unwrap();
-            let translation = camera_offset + &entity_isometry.translation.vector;
-            let camera_position = translation.clone();
+            let maybe_isometry: Option<Isometry3<f32>> = nalgebra::try_convert(transform);
+            if let Some(entity_isometry) = maybe_isometry {
+                let translation = camera_offset + &entity_isometry.translation.vector;
+                let camera_position = translation.clone();
 
-            let view_matrix = nalgebra::Matrix4::look_at_rh(
-                &camera_position.into(),
-                &entity_isometry.translation.vector.into(),
-                &nalgebra::Vector3::z(),
-            );
+                let view_matrix = nalgebra::Matrix4::look_at_rh(
+                    &camera_position.into(),
+                    &entity_isometry.translation.vector.into(),
+                    &nalgebra::Vector3::z(),
+                );
 
-            self.camera = MVP {
-                view: view_matrix.into(),
-                proj: camera.projection.clone().into(),
-                camera_pos: camera_position.into(),
-                _padding: 0.0,
+                self.camera = MVP {
+                    view: view_matrix.into(),
+                    proj: camera.projection.clone().into(),
+                    camera_pos: camera_position.into(),
+                    _padding: 0.0,
+                }
             }
         }
     }

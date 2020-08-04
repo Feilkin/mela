@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use nalgebra::{Isometry3, Matrix4, RealField, Rotation3, UnitQuaternion, Vector3};
 use ncollide3d::shape::ShapeHandle;
-use nphysics3d::object::ColliderDesc;
+use nphysics3d::object::{ColliderDesc, DefaultBodyHandle};
 use serde::export::Formatter;
 
 use crate::ecs::system::{Read, SystemData, Write};
@@ -33,6 +33,7 @@ pub struct PhysicsBody<T: RealField> {
     pub mass: T,
     pub linear_damping: T,
     pub angular_damping: T,
+    pub handle: Option<DefaultBodyHandle>,
 }
 
 impl<T: RealField> std::fmt::Debug for PhysicsBody<T> {
@@ -65,6 +66,8 @@ impl Component for LightComponent {}
 #[derive(Debug)]
 pub struct OrbitCamera {
     pub distance: f32,
+    pub max_distance: f32,
+    pub min_distance: f32,
     pub rotation: Rotation3<f32>,
     pub projection: Matrix4<f32>,
 }

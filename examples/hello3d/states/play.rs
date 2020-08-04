@@ -4,7 +4,7 @@ use gltf::camera::Projection;
 use nalgebra::{Matrix4, Vector3};
 
 use mela::debug::{DebugContext, DebugDrawable};
-use mela::ecs::system::physics::PhysicsSystem;
+use mela::ecs::system::physics::{PhysicsSystem, PhysicsWorld};
 use mela::ecs::system::scene::SceneSystem;
 use mela::ecs::system::SystemCaller;
 use mela::ecs::world::World;
@@ -18,6 +18,9 @@ use crate::states::loading::GameAssets;
 use crate::states::States;
 use crate::systems::InputSystem;
 use crate::world::MyWorld;
+use nphysics3d::object::DefaultBodySet;
+use std::rc::Rc;
+use std::sync::RwLock;
 
 pub struct Play {
     paused: bool,
@@ -37,10 +40,12 @@ impl Play {
         );
         world = new_world;
 
+        let physics_world = Rc::new(RwLock::new(PhysicsWorld::new(Vector3::z() * -9.81_f32)));
+
         let systems = vec![
-            Box::new(PhysicsSystem::new(Vector3::z() * -9.81_f32))
+            Box::new(InputSystem::new(Rc::clone(&physics_world))) as Box<dyn SystemCaller<MyWorld>>,
+            Box::new(PhysicsSystem::new(Rc::clone(&physics_world)))
                 as Box<dyn SystemCaller<MyWorld>>,
-            Box::new(InputSystem {}) as Box<dyn SystemCaller<MyWorld>>,
             Box::new(scene_system) as Box<dyn SystemCaller<MyWorld>>,
         ];
 

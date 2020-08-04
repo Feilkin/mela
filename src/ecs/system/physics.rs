@@ -19,33 +19,46 @@ use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{ComponentStorage, Entity, ReadAccess, RwAccess, System};
 use crate::game::IoState;
 use crate::gfx::RenderContext;
+use nphysics3d::world::{GeometricalWorld, MechanicalWorld};
+use std::ops::DerefMut;
+use std::rc::Rc;
+use std::sync::RwLock;
 
-pub struct PhysicsSystem<T: RealField> {
-    update_interval: Duration,
-    update_timer: Duration,
-    mechanical_world: DefaultMechanicalWorld<T>,
-    geometrical_world: DefaultGeometricalWorld<T>,
-    bodies: DefaultBodySet<T>,
-    colliders: DefaultColliderSet<T>,
-    constraints: DefaultJointConstraintSet<T>,
-    force_generators: DefaultForceGeneratorSet<T>,
-    handle_lookup: HashMap<Entity, DefaultBodyHandle>,
-    // TODO: joints, force generators
+pub struct PhysicsWorld<T: RealField> {
+    pub mechanical_world: DefaultMechanicalWorld<T>,
+    pub geometrical_world: DefaultGeometricalWorld<T>,
+    pub bodies: DefaultBodySet<T>,
+    pub colliders: DefaultColliderSet<T>,
+    pub constraints: DefaultJointConstraintSet<T>,
+    pub force_generators: DefaultForceGeneratorSet<T>,
 }
 
-impl<T: RealField> PhysicsSystem<T> {
-    pub fn new(gravity: Vector3<T>) -> PhysicsSystem<T> {
-        let mut mechanical_world = DefaultMechanicalWorld::new(gravity);
-
-        PhysicsSystem {
-            update_interval: Duration::from_secs_f64(1. / 60.),
-            update_timer: Duration::new(0, 0),
-            mechanical_world,
-            geometrical_world: DefaultGeometricalWorld::new(),
+impl<T: RealField> PhysicsWorld<T> {
+    pub fn new(gravity: Vector3<T>) -> PhysicsWorld<T> {
+        PhysicsWorld {
+            mechanical_world: MechanicalWorld::new(gravity),
+            geometrical_world: GeometricalWorld::new(),
             bodies: DefaultBodySet::new(),
             colliders: DefaultColliderSet::new(),
             constraints: DefaultJointConstraintSet::new(),
             force_generators: DefaultForceGeneratorSet::new(),
+        }
+    }
+}
+
+pub struct PhysicsSystem<T: RealField> {
+    update_interval: Duration,
+    update_timer: Duration,
+    handle_lookup: HashMap<Entity, DefaultBodyHandle>,
+    physics_world: Rc<RwLock<PhysicsWorld<T>>>,
+}
+
+impl<T: RealField> PhysicsSystem<T> {
+    pub fn new(physics_world: Rc<RwLock<PhysicsWorld<T>>>) -> PhysicsSystem<T> {
+        PhysicsSystem {
+            update_interval: Duration::from_secs_f64(1. / 60.),
+            update_timer: Duration::new(0, 0),
+            physics_world,
             handle_lookup: Default::default(),
         }
     }
@@ -55,7 +68,7 @@ impl<W: World, T: RealField> System<W> for PhysicsSystem<T>
 where
     W: WorldStorage<PhysicsBody<T>> + WorldStorage<Transform<T>>,
 {
-    type SystemData<'a> = (Read<'a, PhysicsBody<T>>, Write<'a, Transform<T>>);
+    type SystemData<'a> = (Write<'a, PhysicsBody<T>>, Write<'a, Transform<T>>);
 
     fn name(&self) -> &'static str {
         "PhysicsSystem"
@@ -63,11 +76,21 @@ where
 
     fn update<'f>(
         &mut self,
-        (body_reader, mut transform_reader): Self::SystemData<'f>,
+        (mut body_reader, mut transform_reader): Self::SystemData<'f>,
         delta: Duration,
         io_state: &IoState,
         render_ctx: &mut RenderContext,
     ) -> () {
+        let mut physics_world_guard = self.physics_world.write().unwrap();
+        let &mut PhysicsWorld {
+            ref mut mechanical_world,
+            ref mut geometrical_world,
+            ref mut bodies,
+            ref mut colliders,
+            ref mut constraints,
+            ref mut force_generators,
+        } = physics_world_guard.deref_mut();
+
         self.update_timer += delta;
         if self.update_timer < self.update_interval {
             return;
@@ -75,7 +98,7 @@ where
 
         self.update_timer -= self.update_interval;
 
-        for (entity, body_desc) in body_reader.iter() {
+        for (entity, body_desc) in body_reader.iter_mut() {
             if !self.handle_lookup.contains_key(&entity) {
                 let transform = transform_reader
                     .fetch(entity)
@@ -92,7 +115,9 @@ where
                     .angular_damping(body_desc.angular_damping)
                     .build();
 
-                let body_handle = self.bodies.insert(body);
+                let body_handle = bodies.insert(body);
+
+                body_desc.handle = Some(body_handle);
 
                 if body_desc.colliders.len() > 1 {
                     unimplemented!("multibodies")
@@ -101,7 +126,7 @@ where
                 // add all colliders associated with this body
                 for (i, collider_desc) in body_desc.colliders.iter().enumerate() {
                     let collider = collider_desc.build(BodyPartHandle(body_handle, i));
-                    self.colliders.insert(collider);
+                    colliders.insert(collider);
                 }
 
                 self.handle_lookup.insert(entity, body_handle);
@@ -110,12 +135,12 @@ where
             // TODO: remove entity bodies
         }
 
-        self.mechanical_world.step(
-            &mut self.geometrical_world,
-            &mut self.bodies,
-            &mut self.colliders,
-            &mut self.constraints,
-            &mut self.force_generators,
+        mechanical_world.step(
+            geometrical_world,
+            bodies,
+            colliders,
+            constraints,
+            force_generators,
         );
 
         // update transformations
@@ -125,12 +150,7 @@ where
             // sure it didn't get altered during physics world step
             let body_handle = self.handle_lookup.get(&entity).unwrap();
             // we only support rigid bodies for now, so downcasting is OK here
-            let body: &RigidBody<T> = self
-                .bodies
-                .get(*body_handle)
-                .unwrap()
-                .downcast_ref()
-                .unwrap();
+            let body: &RigidBody<T> = bodies.get(*body_handle).unwrap().downcast_ref().unwrap();
 
             let new_transform = Transform(body.position().to_homogeneous());
 
