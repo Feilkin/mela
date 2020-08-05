@@ -191,8 +191,8 @@ impl SceneSystem<DefaultMesh> {
                             body_status: BodyStatus::Dynamic,
                             colliders: vec![collider_desc],
                             mass: 0.045,
-                            linear_damping: 0.8,
-                            angular_damping: 0.8,
+                            linear_damping: 0.5,
+                            angular_damping: 0.5,
                             handle: None,
                         })
                         .with_component(OrbitCamera {
@@ -392,16 +392,7 @@ where
             }
         }
 
-        for (entity, light) in light_reader.iter() {
-            let transform = transform_reader
-                .fetch(entity)
-                .expect("should have transform");
-
-            self.lights
-                .push(light.light.light_data(&transform.to_homogeneous()));
-        }
-
-        {
+        let camera_offset = {
             // update camera
             let (entity, camera) = camera_reader.iter().next().expect("no camera!");
             let camera_offset = camera
@@ -411,7 +402,7 @@ where
             let transform = transform_reader.fetch(entity).unwrap().0.clone();
             let maybe_isometry: Option<Isometry3<f32>> = nalgebra::try_convert(transform);
             if let Some(entity_isometry) = maybe_isometry {
-                let translation = camera_offset + &entity_isometry.translation.vector;
+                let translation = &camera_offset + &entity_isometry.translation.vector;
                 let camera_position = translation.clone();
 
                 let view_matrix = nalgebra::Matrix4::look_at_rh(
@@ -427,6 +418,22 @@ where
                     _padding: 0.0,
                 }
             }
+
+            transform.translation.clone()
+        };
+
+        let camera_isometry: Isometry3<f32> = nalgebra::convert(camera_offset);
+
+        for (entity, light) in light_reader.iter() {
+            // move directional lights with camera
+            let transform = transform_reader
+                .fetch(entity)
+                .expect("should have transform");
+
+            let offset_transform = &camera_isometry * &transform.0;
+
+            self.lights
+                .push(light.light.light_data(&offset_transform.to_homogeneous()));
         }
     }
 
