@@ -16,7 +16,7 @@ use mela::state::State;
 
 use crate::states::loading::GameAssets;
 use crate::states::States;
-use crate::systems::InputSystem;
+use crate::systems::{CameraUnclipper, InputSystem};
 use crate::world::MyWorld;
 use nphysics3d::object::DefaultBodySet;
 use std::rc::Rc;
@@ -45,6 +45,8 @@ impl Play {
         let systems = vec![
             Box::new(InputSystem::new(Rc::clone(&physics_world))) as Box<dyn SystemCaller<MyWorld>>,
             Box::new(PhysicsSystem::new(Rc::clone(&physics_world)))
+                as Box<dyn SystemCaller<MyWorld>>,
+            Box::new(CameraUnclipper::new(Rc::clone(&physics_world)))
                 as Box<dyn SystemCaller<MyWorld>>,
             Box::new(scene_system) as Box<dyn SystemCaller<MyWorld>>,
         ];
