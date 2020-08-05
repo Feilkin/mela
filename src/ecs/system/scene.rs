@@ -173,7 +173,7 @@ impl SceneSystem<DefaultMesh> {
 
                 // TODO: implement custom attributes
                 if attributes.ball.unwrap_or(0) > 0 {
-                    let collider_desc = ColliderDesc::new(ShapeHandle::new(Ball::new(0.010f32)))
+                    let collider_desc = ColliderDesc::new(ShapeHandle::new(Ball::new(0.0234f32)))
                         .density(1.0)
                         .ccd_enabled(true)
                         .collision_groups(CollisionGroups::new().with_membership(&[0, 1]))
@@ -397,7 +397,7 @@ where
             let (entity, camera) = camera_reader.iter().next().expect("no camera!");
             let camera_offset = camera
                 .rotation
-                .transform_vector(&(Vector3::y() * -camera.distance + Vector3::z() * 1.0));
+                .transform_vector(&(Vector3::y() * -camera.distance));
 
             let transform = transform_reader.fetch(entity).unwrap().0.clone();
             let maybe_isometry: Option<Isometry3<f32>> = nalgebra::try_convert(transform);

@@ -3,7 +3,7 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
-use nalgebra::{Isometry3, Matrix4, RealField, Rotation3, UnitQuaternion, Vector3};
+use nalgebra::{Isometry3, Matrix4, Quaternion, RealField, Rotation3, UnitQuaternion, Vector3};
 use ncollide3d::shape::ShapeHandle;
 use nphysics3d::object::{ColliderDesc, DefaultBodyHandle};
 use serde::export::Formatter;

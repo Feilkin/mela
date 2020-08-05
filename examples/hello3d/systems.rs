@@ -7,6 +7,7 @@ use mela::ecs::system::{Read, Write};
 use mela::ecs::System;
 use mela::game::IoState;
 use mela::gfx::RenderContext;
+use mela::nphysics3d::object::{Body, RigidBody};
 use nalgebra::{Isometry3, Rotation3, Vector3};
 use ncollide3d::pipeline::CollisionGroups;
 use ncollide3d::query::Ray;
@@ -44,26 +45,65 @@ impl System<MyWorld> for InputSystem {
         // move camera
         let rotation_speed = std::f32::consts::PI * delta.as_secs_f32();
         let (entity, camera) = camera_writer.iter_mut().next().expect("no camera");
+        let body_component = body_reader.fetch(entity).unwrap();
 
-        if io_state.is_down(0x1e) {
-            let new_rotation = &camera.rotation * Rotation3::new(Vector3::z() * -rotation_speed);
-            camera.set_rotation(new_rotation);
-        } else if io_state.is_down(0x20) {
-            let new_rotation = &camera.rotation * Rotation3::new(Vector3::z() * rotation_speed);
-            camera.set_rotation(new_rotation);
-        }
+        if let Some(body_handle) = body_component.handle {
+            let mut physics_world = self.physics_world.write().unwrap();
+            let body: &mut RigidBody<f32> = physics_world
+                .bodies
+                .get_mut(body_handle)
+                .unwrap()
+                .downcast_mut()
+                .unwrap();
 
-        // hit ball
-        if io_state.pressed(0x39) {
-            let body_component = body_reader.fetch(entity).unwrap();
-            if let Some(body_handle) = body_component.handle {
+            let (roll, pitch, yaw) = camera.rotation.euler_angles();
+            if body.velocity().linear.norm() > 0.01 {
+                // camera direction = ball direction
+                let forward = Vector3::y();
+                let target_yaw =
+                    Rotation3::rotation_between(&forward, &body.velocity().linear.normalize())
+                        .and_then(|r| Some(r.euler_angles().2))
+                        .unwrap_or(0.);
+
+                let factor = 0.5;
+                let difference = (target_yaw - yaw) % (std::f32::consts::PI * 2.);
+                let difference = 2. * difference % (std::f32::consts::PI * 2.) - difference;
+
+                let new_yaw = yaw
+                    + difference.signum() * (difference.abs() * factor).min(rotation_speed * 0.5);
+
+                let new_rotation = Rotation3::from_euler_angles(roll, pitch, new_yaw);
+                camera.set_rotation(new_rotation);
+            } else {
+                // player control
+                let pitch_delta = if io_state.is_down(0x11) {
+                    -rotation_speed
+                } else if io_state.is_down(0x1f) {
+                    rotation_speed
+                } else {
+                    0.
+                };
+
+                let yaw_delta = if io_state.is_down(0x1e) {
+                    -rotation_speed
+                } else if io_state.is_down(0x20) {
+                    rotation_speed
+                } else {
+                    0.
+                };
+
+                camera.set_rotation(Rotation3::from_euler_angles(
+                    roll + pitch_delta,
+                    pitch,
+                    yaw + yaw_delta,
+                ));
+            }
+
+            // hit ball
+            if io_state.pressed(0x39) {
                 println!("pushing ball");
-                // let (_, _, z_angle) = camera.rotation.euler_angles();
-                // let direction =
-                //     Rotation3::new(Vector3::z() * z_angle).transform_vector(&Vector3::y());
-                let direction = camera.rotation.transform_vector(&Vector3::y());
-                let mut physics_world = self.physics_world.write().unwrap();
-                let body = physics_world.bodies.get_mut(body_handle).unwrap();
+                let (_, _, yaw) = camera.rotation.euler_angles();
+                let direction = Rotation3::new(Vector3::z() * yaw).transform_vector(&Vector3::y());
                 body.apply_force(
                     0,
                     &Force3::new(direction * 0.136, nalgebra::zero()),
