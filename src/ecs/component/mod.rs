@@ -15,10 +15,10 @@ use crate::gfx::light::DirectionalLight;
 use crate::gfx::Mesh;
 
 #[derive(Clone, Debug)]
-pub struct Transform<T: RealField>(pub Matrix4<T>);
+pub struct Transform<T: RealField>(pub Isometry3<T>);
 
 impl<T: RealField> Deref for Transform<T> {
-    type Target = Matrix4<T>;
+    type Target = Isometry3<T>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

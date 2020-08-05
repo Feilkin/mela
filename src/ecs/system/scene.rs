@@ -7,7 +7,8 @@ use std::time::Duration;
 use gltf::camera::Projection;
 use gltf::Semantic;
 use nalgebra::{
-    Isometry3, Matrix4, Point3, Quaternion, Rotation3, Unit, UnitQuaternion, Vector3, Vector4,
+    Isometry3, Matrix4, Point3, Quaternion, Rotation3, Translation3, Unit, UnitQuaternion, Vector3,
+    Vector4,
 };
 use ncollide3d::shape::{Ball, Compound, ShapeHandle, TriMesh};
 use nphysics3d::material::{BasicMaterial, MaterialHandle};
@@ -25,6 +26,7 @@ use crate::gfx::material::Materials;
 use crate::gfx::pass::Pass;
 use crate::gfx::primitives::MVP;
 use crate::gfx::{pass::DefaultPass, DefaultMesh, DefaultScene, Mesh, RenderContext, Scene};
+use ncollide3d::pipeline::CollisionGroups;
 
 pub struct SceneSystem<M: Mesh> {
     meshes: Vec<MeshWrapper<M>>,
@@ -156,7 +158,14 @@ impl SceneSystem<DefaultMesh> {
             .expect("no scenes");
 
         for node in document.default_scene().unwrap().nodes() {
-            let transform = Transform(node.transform().matrix().into());
+            let (translation, rotation, _) = node.transform().decomposed();
+            let translation_vector: Vector3<f32> = translation.into();
+            let rotation_vector4: Vector4<f32> = rotation.into();
+            let rotation_quaternion: Quaternion<f32> = rotation_vector4.into();
+            let transform = Transform(Isometry3::from_parts(
+                translation_vector.into(),
+                UnitQuaternion::from_quaternion(rotation_quaternion),
+            ));
             let mut entity_builder = world.add_entity().with_component(transform);
 
             if let Some(extras) = node.extras() {
@@ -167,12 +176,13 @@ impl SceneSystem<DefaultMesh> {
                     let collider_desc = ColliderDesc::new(ShapeHandle::new(Ball::new(0.010f32)))
                         .density(1.0)
                         .ccd_enabled(true)
+                        .collision_groups(CollisionGroups::new().with_membership(&[0, 1]))
                         .material(MaterialHandle::new(BasicMaterial::new(0.85, 0.4)));
 
                     let projection = nalgebra::Matrix4::new_perspective(
                         16. / 9.,
                         0.4710899940857267,
-                        0.20,
+                        0.0001,
                         100.,
                     );
 
@@ -181,13 +191,13 @@ impl SceneSystem<DefaultMesh> {
                             body_status: BodyStatus::Dynamic,
                             colliders: vec![collider_desc],
                             mass: 0.045,
-                            linear_damping: 0.0,
-                            angular_damping: 0.0,
+                            linear_damping: 0.8,
+                            angular_damping: 0.8,
                             handle: None,
                         })
                         .with_component(OrbitCamera {
                             distance: 0.5,
-                            max_distance: 10.0,
+                            max_distance: 1.0,
                             min_distance: 0.2,
                             rotation: Rotation3::identity(),
                             projection,
@@ -279,9 +289,9 @@ impl SceneSystem<DefaultMesh> {
                     let mesh = TriMesh::new(vertices, indices, None);
 
                     entity_builder = entity_builder.with_component(PhysicsBody {
-                        colliders: vec![
-                            ColliderDesc::new(ShapeHandle::new(mesh)).ccd_enabled(false)
-                        ],
+                        colliders: vec![ColliderDesc::new(ShapeHandle::new(mesh))
+                            .ccd_enabled(false)
+                            .collision_groups(CollisionGroups::new().with_membership(&[0]))],
                         mass: f32::INFINITY,
                         linear_damping: 0.0,
                         body_status: BodyStatus::Dynamic,
@@ -377,7 +387,7 @@ where
             for primitive in &mesh.primitives {
                 self.meshes.push(MeshWrapper {
                     mesh: Arc::clone(primitive),
-                    transform: *transform.clone(),
+                    transform: transform.to_homogeneous(),
                 });
             }
         }
@@ -387,7 +397,8 @@ where
                 .fetch(entity)
                 .expect("should have transform");
 
-            self.lights.push(light.light.light_data(transform));
+            self.lights
+                .push(light.light.light_data(&transform.to_homogeneous()));
         }
 
         {
@@ -395,7 +406,7 @@ where
             let (entity, camera) = camera_reader.iter().next().expect("no camera!");
             let camera_offset = camera
                 .rotation
-                .transform_vector(&(Vector3::y() * -camera.distance + Vector3::z() * 0.1));
+                .transform_vector(&(Vector3::y() * -camera.distance + Vector3::z() * 1.0));
 
             let transform = transform_reader.fetch(entity).unwrap().0.clone();
             let maybe_isometry: Option<Isometry3<f32>> = nalgebra::try_convert(transform);

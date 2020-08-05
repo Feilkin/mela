@@ -152,7 +152,7 @@ where
             // we only support rigid bodies for now, so downcasting is OK here
             let body: &RigidBody<T> = bodies.get(*body_handle).unwrap().downcast_ref().unwrap();
 
-            let new_transform = Transform(body.position().to_homogeneous());
+            let new_transform = Transform(body.position().clone());
 
             transform_reader.set(entity, new_transform);
         }
