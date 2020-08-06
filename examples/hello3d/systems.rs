@@ -57,7 +57,8 @@ impl System<MyWorld> for InputSystem {
                 .unwrap();
 
             let (roll, pitch, yaw) = camera.rotation.euler_angles();
-            if body.velocity().linear.norm() > 0.01 {
+            let speed = body.velocity().linear.norm();
+            if speed > 0.01 {
                 // camera direction = ball direction
                 let forward = Vector3::y();
                 let target_yaw =
@@ -65,12 +66,11 @@ impl System<MyWorld> for InputSystem {
                         .and_then(|r| Some(r.euler_angles().2))
                         .unwrap_or(0.);
 
-                let factor = 0.5;
+                let factor = 1.0 - (-speed * delta.as_secs_f32()).exp();
                 let difference = (target_yaw - yaw) % (std::f32::consts::PI * 2.);
                 let difference = 2. * difference % (std::f32::consts::PI * 2.) - difference;
 
-                let new_yaw = yaw
-                    + difference.signum() * (difference.abs() * factor).min(rotation_speed * 0.5);
+                let new_yaw = yaw + difference * factor;
 
                 let new_rotation = Rotation3::from_euler_angles(roll, pitch, new_yaw);
                 camera.set_rotation(new_rotation);
