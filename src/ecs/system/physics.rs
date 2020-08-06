@@ -77,8 +77,8 @@ where
         &mut self,
         (mut body_reader, mut transform_reader): Self::SystemData<'f>,
         delta: Duration,
-        io_state: &IoState,
-        render_ctx: &mut RenderContext,
+        _io_state: &IoState,
+        _render_ctx: &mut RenderContext,
     ) -> () {
         let mut physics_world_guard = self.physics_world.write().unwrap();
         let &mut PhysicsWorld {

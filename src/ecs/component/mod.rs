@@ -34,7 +34,7 @@ pub struct PhysicsBody<T: RealField> {
 }
 
 impl<T: RealField> std::fmt::Debug for PhysicsBody<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         unimplemented!()
     }
 }
@@ -46,7 +46,7 @@ pub struct MeshComponent<M: Mesh + Send + Sync> {
 }
 
 impl<M: Mesh + Send + Sync> std::fmt::Debug for MeshComponent<M> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         unimplemented!()
     }
 }

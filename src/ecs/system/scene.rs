@@ -156,7 +156,7 @@ impl SceneSystem<DefaultMesh> {
             .or(document.scenes().next())
             .expect("no scenes");
 
-        for node in document.default_scene().unwrap().nodes() {
+        for node in scene.nodes() {
             let (translation, rotation, _) = node.transform().decomposed();
             let translation_vector: Vector3<f32> = translation.into();
             let rotation_vector4: Vector4<f32> = rotation.into();
@@ -372,9 +372,9 @@ where
     fn update<'f>(
         &mut self,
         (mesh_reader, transform_reader, light_reader, camera_reader): Self::SystemData<'f>,
-        delta: Duration,
-        io_state: &IoState,
-        render_ctx: &mut RenderContext,
+        _delta: Duration,
+        _io_state: &IoState,
+        _render_ctx: &mut RenderContext,
     ) -> () {
         self.meshes.clear();
         self.lights.clear();

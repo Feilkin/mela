@@ -55,7 +55,7 @@ impl Mesh for DefaultMesh {
 impl DefaultMesh {
     pub fn from_gltf(
         primitive: gltf::mesh::Primitive,
-        render_ctx: &mut RenderContext,
+        _render_ctx: &mut RenderContext,
         buffers: &[Arc<wgpu::Buffer>],
     ) -> DefaultMesh {
         let positions_buffer = primitive

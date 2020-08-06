@@ -147,7 +147,7 @@ impl<W: World> Layer<W> for TileLayer {
         }
     }
 
-    fn add_entities(&self, mut world: W) -> W {
+    fn add_entities(&self, mut _world: W) -> W {
         unimplemented!();
     }
 }
@@ -166,7 +166,7 @@ impl ObjectLayer {
 }
 
 impl<W: World> Layer<W> for ObjectLayer {
-    fn update(&mut self, render_ctx: &mut RenderContext) {
+    fn update(&mut self, _render_ctx: &mut RenderContext) {
         // TODO: implement
     }
 
@@ -174,20 +174,20 @@ impl<W: World> Layer<W> for ObjectLayer {
         &self.objects
     }
 
-    fn draw(&self, camera: &Matrix4<f32>, render_ctx: &mut RenderContext) {
+    fn draw(&self, _camera: &Matrix4<f32>, _render_ctx: &mut RenderContext) {
         // TODO: implement
     }
 
     fn draw_to(
         &self,
-        camera: &Matrix4<f32>,
-        view: &[&TextureView],
-        render_ctx: &mut RenderContext,
+        _camera: &Matrix4<f32>,
+        _view: &[&TextureView],
+        _render_ctx: &mut RenderContext,
     ) {
         // TODO: implement
     }
 
-    fn add_entities(&self, world: W) -> W {
+    fn add_entities(&self, _world: W) -> W {
         // TODO: implement
         unimplemented!()
     }

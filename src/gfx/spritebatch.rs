@@ -140,7 +140,7 @@ impl Spritebatch {
         }
     }
 
-    pub fn draw(&self, transform: &nalgebra::Matrix4<f32>, render_ctx: &mut RenderContext) {
+    pub fn draw(&self, _transform: &nalgebra::Matrix4<f32>, render_ctx: &mut RenderContext) {
         if self.dirty {
             return;
         }
@@ -152,7 +152,7 @@ impl Spritebatch {
         };
 
         // bind group is set here
-        let (bind_group, transform_buffer) = self.bind_group.as_ref().unwrap();
+        let (bind_group, _) = self.bind_group.as_ref().unwrap();
         //        let transform_data: [[f32; 4]; 4] = transform.clone().into();
 
         //        transform_buffer.map_write_async(0, std::mem::size_of::<[[f32; 4]; 4]>() as u64, move |buf| {
@@ -183,7 +183,7 @@ impl Spritebatch {
 
     pub fn draw_to(
         &self,
-        transform: &nalgebra::Matrix4<f32>,
+        _transform: &nalgebra::Matrix4<f32>,
         view: &wgpu::TextureView,
         render_ctx: &mut RenderContext,
     ) {
@@ -198,7 +198,7 @@ impl Spritebatch {
         };
 
         // bind group is set here
-        let (bind_group, transform_buffer) = self.bind_group.as_ref().unwrap();
+        let (bind_group, _) = self.bind_group.as_ref().unwrap();
         //        let transform_data: [[f32; 4]; 4] = transform.clone().into();
 
         //        transform_buffer.map_write_async(0, std::mem::size_of::<[[f32; 4]; 4]>() as u64, move |buf| {

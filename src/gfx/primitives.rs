@@ -161,7 +161,7 @@ impl Mesh2D {
         }
     }
 
-    pub fn draw(&self, render_ctx: &mut RenderContext) {
+    pub fn draw(&self, _render_ctx: &mut RenderContext) {
         // FIXME implemtn this
     }
 }

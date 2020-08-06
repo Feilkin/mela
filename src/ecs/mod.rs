@@ -291,7 +291,7 @@ impl<'d: 'w, 'w, C: 'd + Component> WriteAccess<'w, C> for DequeWriter<'d, C> {
         }
     }
 
-    fn unset(&mut self, entity: Entity) {
+    fn unset(&mut self, _entity: Entity) {
         unimplemented!()
     }
 

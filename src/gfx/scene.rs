@@ -117,7 +117,7 @@ impl DefaultScene<DefaultMesh> {
             .expect("no scenes");
         let mut meshes = Vec::new();
 
-        for node in document.default_scene().unwrap().nodes() {
+        for node in scene.nodes() {
             if let Some(mesh) = node.mesh() {
                 for primitive in mesh.primitives() {
                     meshes.push(DefaultMesh::from_gltf(primitive, render_ctx, &buffers));

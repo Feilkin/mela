@@ -161,8 +161,8 @@ pub trait System<W: World> {
                                         //        profiler_tag: profiler::OpenTagTree<'f>
     ) -> ();
 
-    fn draw(&self, render_ctx: &mut RenderContext) {}
-    fn draw_to(&self, view: &[&wgpu::TextureView], render_ctx: &mut RenderContext) {}
+    fn draw(&self, _render_ctx: &mut RenderContext) {}
+    fn draw_to(&self, _view: &[&wgpu::TextureView], _render_ctx: &mut RenderContext) {}
 }
 
 pub trait SystemCaller<W: World> {

@@ -24,7 +24,7 @@ pub struct Tileset {
 impl Tileset {
     pub fn from_file<P: AsRef<Path>>(
         path: P,
-        first_gid: usize,
+        _first_gid: usize,
         render_ctx: &mut RenderContext,
     ) -> Result<Tileset, AssetError> {
         let file = File::open(path.as_ref())?;
@@ -124,7 +124,7 @@ impl Tileset {
 }
 
 impl DebugDrawable for Tileset {
-    fn draw_debug_ui(&mut self, render_ctx: &mut RenderContext) {
+    fn draw_debug_ui(&mut self, _render_ctx: &mut RenderContext) {
         //        use imgui::*;
         //
         //        ui.text(&im_str!("name: {}", self.name));
