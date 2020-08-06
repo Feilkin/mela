@@ -1,14 +1,10 @@
-use std::collections::HashMap;
-use std::rc::Rc;
 use std::time::Duration;
-
-use image::load;
 
 use mela::asset::scene::Scene;
 use mela::asset::{Asset, AssetState};
 use mela::debug::{DebugContext, DebugDrawable};
 use mela::game::IoState;
-use mela::gfx::{RenderContext, Texture};
+use mela::gfx::RenderContext;
 use mela::state::State;
 
 use crate::states::{Play, States};

@@ -1,16 +1,9 @@
 //! ECS world definition
 
-use std::time::Duration;
-
-use nalgebra::Vector3;
-
 use mela::ecs::component::{LightComponent, MeshComponent, OrbitCamera, PhysicsBody, Transform};
-use mela::ecs::system::physics::PhysicsSystem;
-use mela::ecs::system::SystemCaller;
 use mela::ecs::world::WorldStorage;
-use mela::ecs::{entity::EntityBuilder, world::World, DequeStorage, Entity, VecStorage};
-use mela::game::IoState;
-use mela::gfx::{DefaultMesh, RenderContext};
+use mela::ecs::{entity::EntityBuilder, world::World, Entity, VecStorage};
+use mela::gfx::DefaultMesh;
 
 use crate::components::MyComponents;
 

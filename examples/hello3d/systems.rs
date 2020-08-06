@@ -12,7 +12,6 @@ use nalgebra::{Isometry3, Rotation3, Vector3};
 use ncollide3d::pipeline::CollisionGroups;
 use ncollide3d::query::Ray;
 use nphysics3d::algebra::{Force3, ForceType};
-use nphysics3d::object::DefaultBodySet;
 use std::ops::DerefMut;
 use std::rc::Rc;
 use std::sync::RwLock;

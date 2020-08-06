@@ -1,24 +1,19 @@
 use std::time::Duration;
 
-use gltf::camera::Projection;
-use nalgebra::{Matrix4, Vector3};
+use nalgebra::Vector3;
 
 use mela::debug::{DebugContext, DebugDrawable};
 use mela::ecs::system::physics::{PhysicsSystem, PhysicsWorld};
 use mela::ecs::system::scene::SceneSystem;
 use mela::ecs::system::SystemCaller;
-use mela::ecs::world::World;
 use mela::game::IoState;
-use mela::gfx::pass::Pass;
-use mela::gfx::primitives::{Quad, Vertex, MVP};
-use mela::gfx::{pass::DefaultPass, DefaultMesh, DefaultScene, RenderContext};
+use mela::gfx::RenderContext;
 use mela::state::State;
 
 use crate::states::loading::GameAssets;
 use crate::states::States;
 use crate::systems::{CameraUnclipper, InputSystem};
 use crate::world::MyWorld;
-use nphysics3d::object::DefaultBodySet;
 use std::rc::Rc;
 use std::sync::RwLock;
 
