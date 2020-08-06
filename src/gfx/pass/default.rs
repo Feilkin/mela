@@ -1,9 +1,6 @@
 //! Default 3D shader with depth buffer.
 
-use std::rc::Rc;
 use std::sync::Arc;
-
-use wgpu::BindGroup;
 
 use crate::gfx::light::LightData;
 use crate::gfx::material::Materials;

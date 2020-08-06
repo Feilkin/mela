@@ -2,7 +2,6 @@
 
 use std::fs::File;
 use std::io::BufReader;
-use std::thread::sleep;
 use std::time::{Duration, Instant};
 
 use futures::executor::block_on;
@@ -10,15 +9,14 @@ use replace_with::replace_with_or_abort;
 use serde::{Deserialize, Serialize};
 use winit::dpi::PhysicalSize;
 use winit::{
-    event::{Event, WindowEvent},
+    event::Event,
     event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
+    window::WindowBuilder,
 };
 
 use crate::debug::DebugContext;
 use crate::game::Playable;
 use crate::gfx::{default_render_pipelines, RenderContext};
-use futures::stream::Concat;
 
 fn default_max_fps() -> u32 {
     300
@@ -170,7 +168,7 @@ impl<G: 'static + Playable> Application<G> {
                         let delta = last_update.elapsed();
                         last_update = Instant::now();
 
-                        let (frame, update_buffer, draw_buffer) = {
+                        let (_, update_buffer, draw_buffer) = {
                             let mut render_ctx = RenderContext {
                                 screen_size,
                                 frame: &frame.view,

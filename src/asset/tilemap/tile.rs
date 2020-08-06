@@ -1,8 +1,6 @@
 //! Tile
 
-use std::rc::Rc;
-
-use crate::asset::tilemap::{data, ObjectGroup, Tileset};
+use crate::asset::tilemap::ObjectGroup;
 use crate::debug::DebugDrawable;
 use crate::gfx::primitives::Quad;
 use crate::gfx::Texture;

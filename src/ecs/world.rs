@@ -1,8 +1,6 @@
 //! World is the container thing
 
-use crate::ecs::{
-    entity::EntityBuilder, Component, ComponentStorage, Entity, ReadAccess, WriteAccess,
-};
+use crate::ecs::{entity::EntityBuilder, Component, ComponentStorage, Entity};
 
 pub trait World: Sized {
     fn entities(&self) -> &[Entity];

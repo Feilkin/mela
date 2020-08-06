@@ -1,6 +1,5 @@
 //! Data type definitions for import
 
-use std::convert::{TryFrom, TryInto};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
@@ -9,7 +8,7 @@ use serde::Deserialize;
 
 use crate::asset::tilemap::{layers, tileset};
 use crate::asset::AssetError;
-use crate::ecs::world::{World, WorldStorage};
+use crate::ecs::world::World;
 
 #[derive(Debug, Deserialize)]
 pub struct Tileset {

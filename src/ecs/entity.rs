@@ -1,9 +1,6 @@
 //! Entity related stuff
 
-use std::ops::Deref;
-
-use serde::export::fmt::Error;
-use serde::export::{Formatter, PhantomData};
+use serde::export::Formatter;
 
 use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{Component, ComponentStorage, WriteAccess};

@@ -2,19 +2,11 @@
 
 use std::collections::VecDeque;
 use std::fmt::Debug;
-use std::iter::{Enumerate, FilterMap};
-use std::net::Shutdown::Write;
-use std::ops::Deref;
-use std::rc::Rc;
-use std::slice::Iter;
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub use entity::Entity;
 pub use event::Event;
 pub use system::System;
-
-use crate::ecs::entity::EntityBuilder;
-use crate::ecs::world::World;
 
 pub mod component;
 pub mod entity;

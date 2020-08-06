@@ -3,7 +3,7 @@
 use std::mem;
 use std::rc::Rc;
 
-use wgpu::{ShaderModule, TextureComponentType, VertexStateDescriptor};
+use wgpu::{TextureComponentType, VertexStateDescriptor};
 
 // re-exports
 pub use mesh::{DefaultMesh, Mesh};

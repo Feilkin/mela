@@ -1,14 +1,11 @@
 //! Mesh interface things
 
-use std::rc::Rc;
 use std::sync::Arc;
 
 use gltf::Semantic;
 use nalgebra::Matrix4;
 use wgpu::Buffer;
 
-use crate::gfx::material::MetallicRoughness;
-use crate::gfx::primitives::Vertex;
 use crate::gfx::RenderContext;
 
 pub trait Mesh {
@@ -61,9 +58,6 @@ impl DefaultMesh {
         render_ctx: &mut RenderContext,
         buffers: &[Arc<wgpu::Buffer>],
     ) -> DefaultMesh {
-        // TODO: get rid of zerocopy
-        use zerocopy::AsBytes;
-
         let positions_buffer = primitive
             .attributes()
             .find(|(semantic, _)| match semantic {

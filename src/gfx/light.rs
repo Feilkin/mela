@@ -1,11 +1,6 @@
 //! 2D raycast lighting and more maybe
 
-use crate::gfx::RenderContext;
-use nalgebra::{
-    Isometry3, Matrix4, Point3, Quaternion, Rotation3, Translation, Translation3, UnitQuaternion,
-    Vector, Vector3,
-};
-use wgpu::TextureDescriptor;
+use nalgebra::{Isometry3, Matrix4, Translation3, UnitQuaternion, Vector3};
 use zerocopy::{AsBytes, FromBytes};
 
 /// Wrapper for data sent to the GPU

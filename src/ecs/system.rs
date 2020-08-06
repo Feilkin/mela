@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use crate::ecs::world::{World, WorldStorage};
-use crate::ecs::{Component, ComponentStorage, Entity, Event, ReadAccess, RwAccess, WriteAccess};
+use crate::ecs::{Component, ComponentStorage, Entity, ReadAccess, RwAccess};
 use crate::game::IoState;
 use crate::gfx::RenderContext;
 

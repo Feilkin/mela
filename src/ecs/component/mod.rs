@@ -3,14 +3,11 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
-use nalgebra::{Isometry3, Matrix4, Quaternion, RealField, Rotation3, UnitQuaternion, Vector3};
-use ncollide3d::shape::ShapeHandle;
+use nalgebra::{Isometry3, Matrix4, RealField, Rotation3};
 use nphysics3d::object::{ColliderDesc, DefaultBodyHandle};
 use serde::export::Formatter;
 
-use crate::ecs::system::{Read, SystemData, Write};
-use crate::ecs::world::{World, WorldStorage};
-use crate::ecs::{Component, ComponentStorage, RwAccess};
+use crate::ecs::Component;
 use crate::gfx::light::DirectionalLight;
 use crate::gfx::Mesh;
 

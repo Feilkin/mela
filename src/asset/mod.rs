@@ -1,12 +1,8 @@
 //! Loadable stuff
 
-use std::fs::File;
 use std::io::Error;
 use std::path::Path;
 use std::rc::Rc;
-
-use image::DynamicImage;
-use wgpu::BufferDescriptor;
 
 // Example Asset implementation
 // TODO: move to crates when done.

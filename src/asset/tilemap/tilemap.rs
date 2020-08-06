@@ -8,7 +8,7 @@ use crate::asset::tilemap::layers::Layer;
 use crate::asset::tilemap::{data, Tileset};
 use crate::asset::AssetError;
 use crate::debug::DebugDrawable;
-use crate::ecs::world::{World, WorldStorage};
+use crate::ecs::world::World;
 use crate::gfx::RenderContext;
 
 pub trait Orientation {

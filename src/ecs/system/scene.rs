@@ -7,10 +7,10 @@ use std::time::Duration;
 use gltf::camera::Projection;
 use gltf::Semantic;
 use nalgebra::{
-    Isometry3, Matrix4, Point3, Quaternion, Rotation3, Translation3, Unit, UnitQuaternion, Vector3,
-    Vector4,
+    Isometry3, Matrix4, Point3, Quaternion, Rotation3, Unit, UnitQuaternion, Vector3, Vector4,
 };
-use ncollide3d::shape::{Ball, Compound, ShapeHandle, TriMesh};
+use ncollide3d::pipeline::CollisionGroups;
+use ncollide3d::shape::{Ball, ShapeHandle, TriMesh};
 use nphysics3d::material::{BasicMaterial, MaterialHandle};
 use nphysics3d::object::{BodyStatus, ColliderDesc};
 use wgpu::Buffer;
@@ -19,14 +19,13 @@ use crate::asset::scene::NodeAttributes;
 use crate::ecs::component::{LightComponent, MeshComponent, OrbitCamera, PhysicsBody, Transform};
 use crate::ecs::system::Read;
 use crate::ecs::world::{World, WorldStorage};
-use crate::ecs::{ReadAccess, System};
+use crate::ecs::System;
 use crate::game::IoState;
 use crate::gfx::light::{DirectionalLight, LightData};
 use crate::gfx::material::Materials;
 use crate::gfx::pass::Pass;
 use crate::gfx::primitives::MVP;
-use crate::gfx::{pass::DefaultPass, DefaultMesh, DefaultScene, Mesh, RenderContext, Scene};
-use ncollide3d::pipeline::CollisionGroups;
+use crate::gfx::{pass::DefaultPass, DefaultMesh, Mesh, RenderContext, Scene};
 
 pub struct SceneSystem<M: Mesh> {
     meshes: Vec<MeshWrapper<M>>,

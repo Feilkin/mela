@@ -1,9 +1,10 @@
 //! Shadow mapping pass
 
+use std::sync::Arc;
+
 use crate::gfx::light::LightData;
 use crate::gfx::pass::Pass;
 use crate::gfx::{Mesh, RenderContext, Scene};
-use std::sync::Arc;
 
 pub struct ShadowPass {
     light_bind_group_layout: wgpu::BindGroupLayout,

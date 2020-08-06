@@ -1,28 +1,27 @@
 //! Physics related systems
 
 use std::collections::HashMap;
+use std::ops::DerefMut;
+use std::rc::Rc;
+use std::sync::RwLock;
 use std::time::Duration;
 
-use nalgebra::{Matrix4, RealField, Vector3};
-use ncollide3d::shape::ShapeHandle;
+use nalgebra::{RealField, Vector3};
 use nphysics3d::force_generator::DefaultForceGeneratorSet;
 use nphysics3d::joint::DefaultJointConstraintSet;
-use nphysics3d::object::{BodyPartHandle, ColliderDesc, RigidBody, RigidBodyDesc};
+use nphysics3d::object::{BodyPartHandle, RigidBody, RigidBodyDesc};
+use nphysics3d::world::{GeometricalWorld, MechanicalWorld};
 use nphysics3d::{
     object::{DefaultBodyHandle, DefaultBodySet, DefaultColliderSet},
     world::{DefaultGeometricalWorld, DefaultMechanicalWorld},
 };
 
 use crate::ecs::component::{PhysicsBody, Transform};
-use crate::ecs::system::{Read, Write};
+use crate::ecs::system::Write;
 use crate::ecs::world::{World, WorldStorage};
-use crate::ecs::{ComponentStorage, Entity, ReadAccess, RwAccess, System};
+use crate::ecs::{Entity, System};
 use crate::game::IoState;
 use crate::gfx::RenderContext;
-use nphysics3d::world::{GeometricalWorld, MechanicalWorld};
-use std::ops::DerefMut;
-use std::rc::Rc;
-use std::sync::RwLock;
 
 pub struct PhysicsWorld<T: RealField> {
     pub mechanical_world: DefaultMechanicalWorld<T>,

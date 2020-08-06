@@ -1,11 +1,8 @@
 //! Scene stuff
 
-use std::rc::Rc;
 use std::sync::Arc;
 
-use gltf::buffer::Source;
 use gltf::camera::Projection;
-use wgpu::Buffer;
 
 use crate::gfx::light::LightData;
 use crate::gfx::material::Materials;

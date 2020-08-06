@@ -3,13 +3,12 @@
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use std::rc::Rc;
 
 use crate::asset::{
     tilemap::{data, tile::Tile, ObjectGroup},
     Asset, AssetError, AssetState,
 };
-use crate::debug::{DebugContext, DebugDrawable};
+use crate::debug::DebugDrawable;
 use crate::gfx::primitives::Quad;
 use crate::gfx::{RenderContext, Texture};
 

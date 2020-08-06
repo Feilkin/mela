@@ -25,7 +25,7 @@ where
 {
     fn poll(
         self: Box<Self>,
-        render_ctx: &mut RenderContext,
+        _render_ctx: &mut RenderContext,
     ) -> Result<AssetState<Scene>, AssetError> {
         let (document, buffers, _) = gltf::import(self.as_ref())?;
 
