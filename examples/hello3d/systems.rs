@@ -39,7 +39,7 @@ impl System<MyWorld> for InputSystem {
         (mut camera_writer, body_reader): Self::SystemData<'f>,
         delta: Duration,
         io_state: &IoState,
-        render_ctx: &mut RenderContext,
+        _render_ctx: &mut RenderContext,
     ) -> () {
         // move camera
         let rotation_speed = std::f32::consts::PI * delta.as_secs_f32();
@@ -134,9 +134,9 @@ impl System<MyWorld> for CameraUnclipper {
     fn update<'f>(
         &mut self,
         (mut camera_writer, transform_reader): Self::SystemData<'f>,
-        delta: Duration,
-        io_state: &IoState,
-        render_ctx: &mut RenderContext,
+        _delta: Duration,
+        _io_state: &IoState,
+        _render_ctx: &mut RenderContext,
     ) -> () {
         let collision_group = CollisionGroups::new().with_blacklist(&[1]);
 

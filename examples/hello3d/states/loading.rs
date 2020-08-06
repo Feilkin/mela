@@ -47,8 +47,6 @@ impl State for Loading {
     ) -> Self::Wrapper {
         let Loading { remaining } = self;
 
-        let mut remaining_count = 0;
-
         match remaining.scene.poll(render_ctx).unwrap() {
             AssetState::Done(scene) => {
                 let loaded = GameAssets { scene };
