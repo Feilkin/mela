@@ -47,16 +47,6 @@ pub struct Application<G: 'static + Playable> {
     settings: Settings,
 }
 
-trait A {}
-trait B {}
-
-impl A for () {}
-impl B for () {}
-
-fn test() -> impl A + B {
-    ()
-}
-
 impl<G: 'static + Playable> Application<G> {
     pub fn new<T: Into<String>>(game: G, title: T) -> Application<G> {
         Application {
