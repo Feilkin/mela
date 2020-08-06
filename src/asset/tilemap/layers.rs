@@ -148,49 +148,7 @@ impl<W: World> Layer<W> for TileLayer {
     }
 
     fn add_entities(&self, mut world: W) -> W {
-        for row in 0..self.size.1 {
-            for column in 0..self.size.0 {
-                let id = column + row * self.size.0;
-
-                if let Some(tile) = &self.data[id] {
-                    for og in tile.object_groups() {
-                        for obj in og.objects() {
-                            // FIXME: object adding
-                            //                            let (half_width, half_height) =
-                            //                                (tile.size()[0] / 2., tile.size()[1] / 2.);
-                            //
-                            //                            let shape = ShapeHandle::new(Cuboid::new(Vector2::new(
-                            //                                half_width,
-                            //                                half_height,
-                            //                            )));
-                            //
-                            //                            // TODO: material from properties?
-                            //                            let material = Material {
-                            //                                friction: 0.80,
-                            //                                bounciness: 1.0,
-                            //                            };
-                            //
-                            //                            let tile_body = Body {
-                            //                                shape,
-                            //                                material,
-                            //                                _static: true,
-                            //                            };
-                            //
-                            //                            world = world
-                            //                                .add_entity()
-                            //                                .with_component(Position::new(
-                            //                                    column as f32 * tile.size()[0] + half_width,
-                            //                                    row as f32 * tile.size()[1] + half_height,
-                            //                                ))
-                            //                                .with_component(tile_body)
-                            //                                .build();
-                        }
-                    }
-                }
-            }
-        }
-
-        world
+        unimplemented!();
     }
 }
 
