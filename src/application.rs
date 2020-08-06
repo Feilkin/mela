@@ -114,7 +114,7 @@ impl<G: 'static + Playable> Application<G> {
         ))
         .unwrap();
 
-        let (device, mut queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+        let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
             extensions: wgpu::Extensions {
                 anisotropic_filtering: false,
             },
@@ -123,7 +123,7 @@ impl<G: 'static + Playable> Application<G> {
 
         let render_pipelines = default_render_pipelines(&device);
 
-        let mut sc_desc = wgpu::SwapChainDescriptor {
+        let sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
@@ -137,7 +137,7 @@ impl<G: 'static + Playable> Application<G> {
 
         let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
-        let mut screen_size = (
+        let screen_size = (
             self.settings.window_size[0] as u32,
             self.settings.window_size[1] as u32,
         );

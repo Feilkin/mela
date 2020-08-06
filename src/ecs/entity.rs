@@ -80,9 +80,7 @@ impl<W: World> EntityBuilder<W> {
         W: WorldStorage<T>,
     {
         let EntityBuilder {
-            new_entity,
-            mut world,
-            ..
+            new_entity, world, ..
         } = self;
 
         world.storage().write().set(new_entity, component);
