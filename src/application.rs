@@ -160,6 +160,8 @@ impl<G: 'static + Playable> Application<G> {
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::WaitUntil(last_update + update_interval);
 
+            platform.handle_event(imgui_ctx.io_mut(), &window, &event);
+
             match event {
                 Event::LoopDestroyed => return,
                 Event::MainEventsCleared => {
