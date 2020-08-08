@@ -104,7 +104,7 @@ impl<G: 'static + Playable> Application<G> {
         ))
         .unwrap();
 
-        let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+        let (device, mut queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
             extensions: wgpu::Extensions {
                 anisotropic_filtering: false,
             },
@@ -126,6 +126,29 @@ impl<G: 'static + Playable> Application<G> {
         };
 
         let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
+
+        // initialize imgui
+        let mut imgui_ctx = imgui::Context::create();
+        let mut platform = imgui_winit_support::WinitPlatform::init(&mut imgui_ctx);
+        platform.attach_window(
+            imgui_ctx.io_mut(),
+            &window,
+            imgui_winit_support::HiDpiMode::Default,
+        );
+        let imgui_font_size = 13.0;
+        imgui_ctx
+            .fonts()
+            .add_font(&[imgui::FontSource::DefaultFontData {
+                config: Some(imgui::FontConfig {
+                    size_pixels: 13.0,
+                    oversample_h: 1,
+                    pixel_snap_h: true,
+                    ..Default::default()
+                }),
+            }]);
+
+        let mut imgui_renderer =
+            imgui_wgpu::Renderer::new(&mut imgui_ctx, &device, &mut queue, sc_desc.format, None);
 
         let screen_size = (
             self.settings.window_size[0] as u32,
@@ -155,6 +178,8 @@ impl<G: 'static + Playable> Application<G> {
                                 label: None,
                             });
 
+                        imgui_ctx.io_mut().update_delta_time(last_update);
+
                         let delta = last_update.elapsed();
                         last_update = Instant::now();
 
@@ -167,7 +192,13 @@ impl<G: 'static + Playable> Application<G> {
                                 pipelines: &render_pipelines,
                                 window: &window,
                             };
-                            let mut debug_ctx = DebugContext {};
+
+                            platform
+                                .prepare_frame(imgui_ctx.io_mut(), &window)
+                                .expect("Failed to prepare imgui frame");
+                            let ui = imgui_ctx.frame();
+
+                            let mut debug_ctx = DebugContext { ui };
 
                             replace_with_or_abort(&mut game, |game| {
                                 game.update(delta, &mut render_ctx, &mut debug_ctx)
@@ -183,6 +214,17 @@ impl<G: 'static + Playable> Application<G> {
                             };
 
                             game.redraw(&mut render_ctx, &mut debug_ctx);
+
+                            let DebugContext { ui } = debug_ctx;
+
+                            imgui_renderer
+                                .render(
+                                    ui.render(),
+                                    &mut render_ctx.device,
+                                    &mut render_ctx.encoder,
+                                    &render_ctx.frame,
+                                )
+                                .unwrap();
 
                             let RenderContext { frame, encoder, .. } = render_ctx;
 

@@ -2,6 +2,7 @@
 
 use std::time::Duration;
 
+use crate::debug::DebugContext;
 use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{Component, ComponentStorage, Entity, ReadAccess, RwAccess};
 use crate::game::IoState;
@@ -158,7 +159,8 @@ pub trait System<W: World> {
         delta: Duration,
         io_state: &IoState,
         render_ctx: &mut RenderContext, // TODO: fix profiler
-                                        //        profiler_tag: profiler::OpenTagTree<'f>
+        //        profiler_tag: profiler::OpenTagTree<'f>
+        debug_ctx: &mut DebugContext,
     ) -> ();
 
     fn draw(&self, _render_ctx: &mut RenderContext) {}
@@ -172,6 +174,7 @@ pub trait SystemCaller<W: World> {
         delta: Duration,
         io_state: &IoState,
         render_ctx: &mut RenderContext,
+        debug_ctx: &mut DebugContext,
     ) -> ();
 
     fn render<'a, 's>(&'s self, render_ctx: &mut RenderContext) -> ();
@@ -187,12 +190,14 @@ where
         delta: Duration,
         io_state: &IoState,
         render_ctx: &mut RenderContext,
+        debug_ctx: &mut DebugContext,
     ) -> () {
         self.update(
             <<S as System<W>>::SystemData<'a> as SystemData<'a, W>>::get(world),
             delta,
             io_state,
             render_ctx,
+            debug_ctx,
         )
     }
 

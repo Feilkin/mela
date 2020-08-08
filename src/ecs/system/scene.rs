@@ -16,6 +16,7 @@ use nphysics3d::object::{BodyStatus, ColliderDesc};
 use wgpu::Buffer;
 
 use crate::asset::scene::NodeAttributes;
+use crate::debug::DebugContext;
 use crate::ecs::component::{LightComponent, MeshComponent, OrbitCamera, PhysicsBody, Transform};
 use crate::ecs::system::Read;
 use crate::ecs::world::{World, WorldStorage};
@@ -375,6 +376,7 @@ where
         _delta: Duration,
         _io_state: &IoState,
         _render_ctx: &mut RenderContext,
+        _debug_ctx: &mut DebugContext,
     ) -> () {
         self.meshes.clear();
         self.lights.clear();

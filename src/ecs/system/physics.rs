@@ -16,6 +16,7 @@ use nphysics3d::{
     world::{DefaultGeometricalWorld, DefaultMechanicalWorld},
 };
 
+use crate::debug::DebugContext;
 use crate::ecs::component::{PhysicsBody, Transform};
 use crate::ecs::system::Write;
 use crate::ecs::world::{World, WorldStorage};
@@ -79,6 +80,7 @@ where
         delta: Duration,
         _io_state: &IoState,
         _render_ctx: &mut RenderContext,
+        _debug_ctx: &mut DebugContext,
     ) -> () {
         let mut physics_world_guard = self.physics_world.write().unwrap();
         let &mut PhysicsWorld {

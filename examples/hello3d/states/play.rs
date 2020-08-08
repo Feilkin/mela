@@ -66,7 +66,7 @@ impl State for Play {
         delta: Duration,
         io_state: &IoState,
         render_ctx: &mut RenderContext,
-        _debug_ctx: &mut DebugContext,
+        debug_ctx: &mut DebugContext,
     ) -> Self::Wrapper {
         if io_state.pressed(0x19) {
             render_ctx.window.set_cursor_visible(!self.paused);
@@ -85,7 +85,7 @@ impl State for Play {
         } = self;
 
         for system in &mut systems {
-            system.dispatch(&world, delta, io_state, render_ctx);
+            system.dispatch(&world, delta, io_state, render_ctx, debug_ctx);
         }
 
         States::Play(Play {

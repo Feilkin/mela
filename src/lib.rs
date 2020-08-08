@@ -4,8 +4,10 @@
 
 // re-export used libraries?
 // do we want to wrap this instead? probably not
+pub use imgui;
 pub use nalgebra;
 pub use nphysics3d;
+pub use winit;
 
 pub mod application;
 pub mod asset;

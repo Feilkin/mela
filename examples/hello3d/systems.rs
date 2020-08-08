@@ -1,6 +1,8 @@
 //! Example specific systems
 
 use crate::world::MyWorld;
+use imgui::{im_str, Window};
+use mela::debug::DebugContext;
 use mela::ecs::component::{OrbitCamera, PhysicsBody, Transform};
 use mela::ecs::system::physics::PhysicsWorld;
 use mela::ecs::system::{Read, Write};
@@ -40,6 +42,7 @@ impl System<MyWorld> for InputSystem {
         delta: Duration,
         io_state: &IoState,
         _render_ctx: &mut RenderContext,
+        debug_ctx: &mut DebugContext,
     ) -> () {
         // move camera
         let rotation_speed = std::f32::consts::PI * delta.as_secs_f32();
@@ -54,6 +57,12 @@ impl System<MyWorld> for InputSystem {
                 .unwrap()
                 .downcast_mut()
                 .unwrap();
+
+            Window::new(im_str!("Ball speed")).build(&debug_ctx.ui, || {
+                debug_ctx
+                    .ui
+                    .text(im_str!("Ball speed: {:?}", body.velocity().linear));
+            });
 
             let (roll, pitch, yaw) = camera.rotation.euler_angles();
             let speed = body.velocity().linear.norm();
@@ -137,6 +146,7 @@ impl System<MyWorld> for CameraUnclipper {
         _delta: Duration,
         _io_state: &IoState,
         _render_ctx: &mut RenderContext,
+        _debug_ctx: &mut DebugContext,
     ) -> () {
         let collision_group = CollisionGroups::new().with_blacklist(&[1]);
 
