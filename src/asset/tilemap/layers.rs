@@ -9,7 +9,7 @@ use crate::asset::{Asset, AssetState};
 use crate::ecs::world::World;
 use crate::gfx::{RenderContext, Spritebatch, Texture};
 
-pub trait Layer<W: World> {
+pub trait Layer {
     fn update(&mut self, render_ctx: &mut RenderContext);
 
     fn objects(&self) -> &[Object] {
@@ -23,9 +23,6 @@ pub trait Layer<W: World> {
         view: &[&wgpu::TextureView],
         render_ctx: &mut RenderContext,
     );
-
-    /// Adds all entities defined by this layer to given world
-    fn add_entities(&self, world: W) -> W;
 }
 
 pub struct TileLayer {
@@ -87,7 +84,7 @@ impl TileLayer {
     }
 }
 
-impl<W: World> Layer<W> for TileLayer {
+impl Layer for TileLayer {
     fn update(&mut self, render_ctx: &mut RenderContext) {
         if self.material_spritebatch.is_none() {
             // FIXME: get rid of this :D
@@ -146,10 +143,6 @@ impl<W: World> Layer<W> for TileLayer {
             msb.draw_to(camera, view[1], render_ctx);
         }
     }
-
-    fn add_entities(&self, mut _world: W) -> W {
-        unimplemented!();
-    }
 }
 
 pub struct ObjectLayer {
@@ -165,7 +158,7 @@ impl ObjectLayer {
     }
 }
 
-impl<W: World> Layer<W> for ObjectLayer {
+impl Layer for ObjectLayer {
     fn update(&mut self, _render_ctx: &mut RenderContext) {
         // TODO: implement
     }
@@ -185,10 +178,5 @@ impl<W: World> Layer<W> for ObjectLayer {
         _render_ctx: &mut RenderContext,
     ) {
         // TODO: implement
-    }
-
-    fn add_entities(&self, _world: W) -> W {
-        // TODO: implement
-        unimplemented!()
     }
 }

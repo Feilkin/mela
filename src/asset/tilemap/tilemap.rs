@@ -15,20 +15,20 @@ pub trait Orientation {
     fn from_data(data: &data::Map) -> Self;
 }
 
-pub struct Tilemap<O: Orientation, W: World> {
+pub struct Tilemap<O: Orientation> {
     name: String,
     size: (usize, usize),
     tile_size: (usize, usize),
     tilesets: Vec<Tileset>,
-    layers: Vec<Box<dyn Layer<W>>>,
+    layers: Vec<Box<dyn Layer>>,
     orientation: O,
 }
 
-impl<O: Orientation, W: World> Tilemap<O, W> {
+impl<O: Orientation> Tilemap<O> {
     pub fn from_file<P: AsRef<Path>>(
         path: P,
         render_ctx: &mut RenderContext,
-    ) -> Result<Tilemap<O, W>, AssetError> {
+    ) -> Result<Tilemap<O>, AssetError> {
         let file = File::open(path.as_ref())?;
         let reader = BufReader::new(file);
         let data = serde_json::from_reader(reader)?;
@@ -47,7 +47,7 @@ impl<O: Orientation, W: World> Tilemap<O, W> {
         name: String,
         path: P,
         render_ctx: &mut RenderContext,
-    ) -> Result<Tilemap<O, W>, AssetError> {
+    ) -> Result<Tilemap<O>, AssetError> {
         let orientation = O::from_data(&data);
         let tilesets = data
             .tilesets
@@ -75,11 +75,11 @@ impl<O: Orientation, W: World> Tilemap<O, W> {
         })
     }
 
-    pub fn layers(&self) -> &[Box<dyn Layer<W>>] {
+    pub fn layers(&self) -> &[Box<dyn Layer>] {
         &self.layers
     }
 
-    pub fn layers_mut(&mut self) -> &mut [Box<dyn Layer<W>>] {
+    pub fn layers_mut(&mut self) -> &mut [Box<dyn Layer>] {
         &mut self.layers
     }
 }
@@ -111,7 +111,7 @@ impl DebugDrawable for Orthogonal {
     //    }
 }
 
-impl<O: Orientation + DebugDrawable, W: World> DebugDrawable for Tilemap<O, W> {
+impl<O: Orientation + DebugDrawable> DebugDrawable for Tilemap<O> {
     //    fn draw_debug_ui(&mut self, ui: &Ui, renderer: &mut Renderer) {
     //        use imgui::*;
     //

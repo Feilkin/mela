@@ -237,7 +237,7 @@ pub enum Layer {
 }
 
 impl Layer {
-    pub fn into_actual<W: World>(self, tilesets: &[tileset::Tileset]) -> Box<dyn layers::Layer<W>> {
+    pub fn into_actual(self, tilesets: &[tileset::Tileset]) -> Box<dyn layers::Layer> {
         match self {
             Layer::TileLayer(layer_data) => Box::new(layer_data.build(tilesets)),
             // TODO: implement object layers
