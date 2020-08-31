@@ -168,7 +168,7 @@ impl MaybeInlinedTilesetOrMaybeExternal {
                     .parent()
                     .unwrap_or(Path::new("."))
                     .join(source_path);
-                dbg!(&actual_path);
+
                 let file = File::open(&actual_path)?;
                 let reader = BufReader::new(file);
                 let data: ExternalTileset = serde_xml_rs::from_reader(reader)?;
