@@ -2,8 +2,9 @@
 
 use crate::gfx::RenderContext;
 
-pub struct DebugContext<'ui> {
+pub struct DebugContext<'ui, 'ui_renderer> {
     pub ui: imgui::Ui<'ui>,
+    pub ui_renderer: &'ui_renderer mut imgui_wgpu::Renderer,
     //    pub profiler_frame: OpenFrame,
 }
 

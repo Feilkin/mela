@@ -147,8 +147,13 @@ impl<G: 'static + Playable> Application<G> {
                 }),
             }]);
 
-        let mut imgui_renderer =
-            imgui_wgpu::Renderer::new(&mut imgui_ctx, &device, &mut queue, sc_desc.format, None);
+        let mut imgui_renderer = imgui_wgpu::Renderer::new(
+            &mut imgui_ctx,
+            &device,
+            &mut queue,
+            sc_desc.format,
+            Some(wgpu::Color::BLACK),
+        );
 
         let screen_size = (
             self.settings.window_size[0] as u32,
@@ -200,7 +205,10 @@ impl<G: 'static + Playable> Application<G> {
                                 .expect("Failed to prepare imgui frame");
                             let ui = imgui_ctx.frame();
 
-                            let mut debug_ctx = DebugContext { ui };
+                            let mut debug_ctx = DebugContext {
+                                ui,
+                                ui_renderer: &mut imgui_renderer,
+                            };
 
                             replace_with_or_abort(&mut game, |game| {
                                 game.update(delta, &mut render_ctx, &mut debug_ctx)
@@ -217,7 +225,7 @@ impl<G: 'static + Playable> Application<G> {
 
                             game.redraw(&mut render_ctx, &mut debug_ctx);
 
-                            let DebugContext { ui } = debug_ctx;
+                            let DebugContext { ui, ui_renderer } = debug_ctx;
 
                             imgui_renderer
                                 .render(
