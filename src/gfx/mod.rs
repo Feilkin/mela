@@ -6,17 +6,23 @@ use std::rc::Rc;
 use wgpu::{TextureComponentType, VertexStateDescriptor};
 
 // re-exports
+#[cfg(feature = "3d")]
 pub use mesh::{DefaultMesh, Mesh};
+#[cfg(feature = "3d")]
 pub use scene::{DefaultScene, Scene};
 pub use spritebatch::Spritebatch;
 
 use crate::gfx::primitives::{Vertex, Vertex2D};
 
 pub mod light;
+#[cfg(feature = "3d")]
 pub(crate) mod material;
+#[cfg(feature = "3d")]
 mod mesh;
+#[cfg(feature = "3d")]
 pub mod pass;
 pub mod primitives;
+#[cfg(feature = "3d")]
 mod scene;
 
 mod spritebatch;

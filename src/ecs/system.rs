@@ -9,6 +9,7 @@ use crate::game::IoState;
 use crate::gfx::RenderContext;
 
 pub mod physics;
+#[cfg(feature = "3d")]
 pub mod scene;
 
 pub struct Read<'a, C> {

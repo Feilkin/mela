@@ -8,7 +8,9 @@ use std::rc::Rc;
 // TODO: move to crates when done.
 use crate::gfx::{RenderContext, Texture};
 
+#[cfg(feature = "3d")]
 pub mod scene;
+#[cfg(feature = "2d")]
 pub mod tilemap;
 
 // wrapper for in memory bytes because asref path things

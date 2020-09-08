@@ -6,19 +6,20 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["2d"]
+3d = ["nphysics3d", "gltf"]
+2d = ["nphysics2d"]
+vr = ["3d", "openxr"]
+
 [dependencies]
-gltf = { version = "0.15.2", features = ["import", "extras", "KHR_lights_punctual"]}
 env_logger = "0.7.1"
 image = "0.23"
 futures = "0.3"
 imgui = "0.4"
 imgui-winit-support = "0.4"
 imgui-wgpu = { path = "../imgui-wgpu-rs" }
-nalgebra = "0.21.1"
-ncollide2d = "0.22.0"
-ncollide3d = "0.23.2"
-nphysics3d = "0.16.1"
-openxr = { version = "0.12.1", features = ["loaded"] }
+nalgebra = "0.22.0"
 rand = "0.7.3"
 replace_with = "0.1.5"
 serde = { version = "1.0", features = ["derive"] }
@@ -28,9 +29,16 @@ winit = "0.22.0"
 wgpu = "0.5"
 zerocopy = "0.2"
 
+
+nphysics3d = { version = "0.17", optional = true }
+nphysics2d = { version = "0.17", optional = true }
+gltf = { version = "0.15.2", features = ["import", "extras", "KHR_lights_punctual"], optional = true }
+openxr = { version = "0.12.1", features = ["loaded"], optional = true }
+
 [profile.release]
 debug = true
 
 [[example]]
 name="hello3d"
 path="examples/hello3d/main.rs"
+required-features = ["3d"]

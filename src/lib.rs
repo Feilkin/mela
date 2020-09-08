@@ -6,7 +6,10 @@
 // do we want to wrap this instead? probably not
 pub use imgui;
 pub use nalgebra;
-pub use nphysics3d;
+#[cfg(feature = "2d")]
+pub use nphysics2d as nphysics;
+#[cfg(feature = "3d")]
+pub use nphysics3d as nphysics;
 pub use winit;
 
 pub mod application;

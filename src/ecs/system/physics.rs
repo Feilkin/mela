@@ -6,15 +6,17 @@ use std::rc::Rc;
 use std::sync::RwLock;
 use std::time::Duration;
 
-use nalgebra::{RealField, Vector3};
-use nphysics3d::force_generator::DefaultForceGeneratorSet;
-use nphysics3d::joint::DefaultJointConstraintSet;
-use nphysics3d::object::{BodyPartHandle, RigidBody, RigidBodyDesc};
-use nphysics3d::world::{GeometricalWorld, MechanicalWorld};
-use nphysics3d::{
-    object::{DefaultBodyHandle, DefaultBodySet, DefaultColliderSet},
-    world::{DefaultGeometricalWorld, DefaultMechanicalWorld},
+use crate::nphysics::{
+    force_generator::DefaultForceGeneratorSet,
+    joint::DefaultJointConstraintSet,
+    math::Vector,
+    object::{
+        BodyPartHandle, DefaultBodyHandle, DefaultBodySet, DefaultColliderSet, RigidBody,
+        RigidBodyDesc,
+    },
+    world::{DefaultGeometricalWorld, DefaultMechanicalWorld, GeometricalWorld, MechanicalWorld},
 };
+use nalgebra::RealField;
 
 use crate::debug::DebugContext;
 use crate::ecs::component::{PhysicsBody, Transform};
@@ -34,7 +36,7 @@ pub struct PhysicsWorld<T: RealField> {
 }
 
 impl<T: RealField> PhysicsWorld<T> {
-    pub fn new(gravity: Vector3<T>) -> PhysicsWorld<T> {
+    pub fn new(gravity: Vector<T>) -> PhysicsWorld<T> {
         PhysicsWorld {
             mechanical_world: MechanicalWorld::new(gravity),
             geometrical_world: GeometricalWorld::new(),
