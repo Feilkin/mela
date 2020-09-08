@@ -147,13 +147,8 @@ impl<G: 'static + Playable> Application<G> {
                 }),
             }]);
 
-        let mut imgui_renderer = imgui_wgpu::Renderer::new(
-            &mut imgui_ctx,
-            &device,
-            &mut queue,
-            sc_desc.format,
-            Some(wgpu::Color::BLACK),
-        );
+        let mut imgui_renderer =
+            imgui_wgpu::Renderer::new(&mut imgui_ctx, &device, &mut queue, sc_desc.format, None);
 
         let screen_size = (
             self.settings.window_size[0] as u32,
