@@ -57,8 +57,8 @@ pub fn default_render_pipelines(device: &wgpu::Device) -> DefaultPipelines {
 fn default_textured_pipeline(
     device: &wgpu::Device,
 ) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_bytes!("../../assets/shader/textured.vert.spv");
-    let fs_source = include_bytes!("../../assets/shader/textured.frag.spv");
+    let vs_source = include_bytes!(concat!(env!("OUT_DIR"), "/textured.vert.spv"));
+    let fs_source = include_bytes!(concat!(env!("OUT_DIR"), "/textured.frag.spv"));
 
     let vs_module = device
         .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
@@ -160,8 +160,8 @@ fn default_flat_pipeline(
     wgpu::BindGroupLayout,
     wgpu::BindGroupLayout,
 ) {
-    let vs_source = include_bytes!("../../assets/shader/flat.vert.spv");
-    let fs_source = include_bytes!("../../assets/shader/flat.frag.spv");
+    let vs_source = include_bytes!(concat!(env!("OUT_DIR"), "/flat.vert.spv"));
+    let fs_source = include_bytes!(concat!(env!("OUT_DIR"), "/flat.frag.spv"));
 
     let vs_module = device
         .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
@@ -294,8 +294,8 @@ fn default_flat_pipeline(
 }
 
 fn default_pixel_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_bytes!("../../assets/shader/pixel.vert.spv");
-    let fs_source = include_bytes!("../../assets/shader/pixel.frag.spv");
+    let vs_source = include_bytes!(concat!(env!("OUT_DIR"), "/pixel.vert.spv"));
+    let fs_source = include_bytes!(concat!(env!("OUT_DIR"), "/pixel.frag.spv"));
 
     let vs_module = device
         .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
@@ -398,8 +398,8 @@ fn default_pixel_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu:
 }
 
 fn raycast_2d_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_bytes!("../../assets/shader/2draycast.vert.spv");
-    let fs_source = include_bytes!("../../assets/shader/2draycast.frag.spv");
+    let vs_source = include_bytes!(concat!(env!("OUT_DIR"), "/2draycast.vert.spv"));
+    let fs_source = include_bytes!(concat!(env!("OUT_DIR"), "/2draycast.frag.spv"));
 
     let vs_module = device
         .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
