@@ -2,7 +2,19 @@
 
 use zerocopy::{AsBytes, FromBytes};
 
+use crate::debug::DebugContext;
+use crate::ecs::component::Transform;
+use crate::ecs::system::Read;
+use crate::ecs::world::{World, WorldStorage};
+use crate::ecs::{Component, System};
+use crate::game::IoState;
 use crate::gfx::{RenderContext, Texture};
+use lyon::lyon_algorithms::path::Path;
+use lyon::lyon_tessellation::{
+    BuffersBuilder, FillAttributes, FillOptions, FillTessellator, StrokeAttributes, StrokeOptions,
+    StrokeTessellator, VertexBuffers,
+};
+use std::time::Duration;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, AsBytes, FromBytes)]
@@ -163,6 +175,124 @@ impl Mesh2D {
 
     pub fn draw(&self, _render_ctx: &mut RenderContext) {
         // FIXME implemtn this
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct PrimitiveComponent {
+    pub color: [f32; 4],
+    pub shape: Path,
+}
+
+impl Component for PrimitiveComponent {}
+
+pub struct PrimitiveRenderer {
+    vertex_buffer: Option<wgpu::Buffer>,
+    index_buffer: Option<wgpu::Buffer>,
+    primitives: Vec<(u32, u32)>,
+}
+
+impl PrimitiveRenderer {
+    pub fn new() -> PrimitiveRenderer {
+        PrimitiveRenderer {
+            vertex_buffer: None,
+            index_buffer: None,
+            primitives: Vec::new(),
+        }
+    }
+}
+
+impl<W> System<W> for PrimitiveRenderer
+where
+    W: World + WorldStorage<Transform<f64>> + WorldStorage<PrimitiveComponent>,
+{
+    type SystemData<'a> = (Read<'a, Transform<f64>>, Read<'a, PrimitiveComponent>);
+
+    fn name(&self) -> &'static str {
+        "PrimitiveRenderer"
+    }
+
+    fn update<'f>(
+        &mut self,
+        (transforms, primitive_components): Self::SystemData<'f>,
+        _delta: Duration,
+        _io_state: &IoState,
+        render_ctx: &mut RenderContext,
+        _debug_ctx: &mut DebugContext,
+    ) -> () {
+        let mut primitives = Vec::new();
+        let mut last_primitive_index = 0;
+        let mut geometry_buffer: VertexBuffers<Vertex2D, u16> = VertexBuffers::new();
+        let mut tesselator = StrokeTessellator::new();
+        let mut buffer_builder = BuffersBuilder::new(
+            &mut geometry_buffer,
+            |pos: lyon::math::Point, _: StrokeAttributes| Vertex2D {
+                position: pos.to_array(),
+                texture_coords: [0., 0.],
+                color: [1., 1., 1., 1.],
+            },
+        );
+
+        for (entity, prim) in primitive_components.iter() {
+            if let Some(transform) = transforms.fetch(entity) {
+                let count = lyon::tessellation::basic_shapes::stroke_circle(
+                    lyon::math::point(0., 0.),
+                    0.5,
+                    &StrokeOptions::default()
+                        .with_line_width(0.01)
+                        .with_tolerance(0.01),
+                    &mut buffer_builder,
+                )
+                .unwrap();
+
+                primitives.push((last_primitive_index, last_primitive_index + count.indices));
+                last_primitive_index = last_primitive_index + count.indices;
+            }
+        }
+
+        if last_primitive_index == 0 {
+            return;
+        }
+
+        self.primitives = primitives;
+
+        self.vertex_buffer = Some(render_ctx.device.create_buffer_with_data(
+            geometry_buffer.vertices.as_bytes(),
+            wgpu::BufferUsage::VERTEX,
+        ));
+
+        self.index_buffer =
+            Some(render_ctx.device.create_buffer_with_data(
+                geometry_buffer.indices.as_bytes(),
+                wgpu::BufferUsage::INDEX,
+            ));
+    }
+
+    fn draw(&self, render_ctx: &mut RenderContext) {
+        if self.index_buffer.is_none() {
+            return;
+        }
+
+        let mut pass = render_ctx
+            .encoder
+            .begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                    attachment: &render_ctx.frame,
+                    resolve_target: None,
+                    load_op: wgpu::LoadOp::Clear,
+                    store_op: wgpu::StoreOp::Store,
+                    clear_color: Default::default(),
+                }],
+                depth_stencil_attachment: None,
+            });
+
+        pass.set_pipeline(&render_ctx.pipelines.primitives);
+        pass.set_index_buffer(self.index_buffer.as_ref().unwrap(), 0, 0);
+        pass.set_vertex_buffer(0, self.vertex_buffer.as_ref().unwrap(), 0, 0);
+
+        for (start, end) in &self.primitives {
+            pass.draw_indexed(*start..*end, 0, 0..1);
+        }
     }
 }
 
