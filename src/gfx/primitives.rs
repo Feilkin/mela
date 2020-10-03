@@ -236,11 +236,14 @@ where
         for (entity, prim) in primitive_components.iter() {
             if let Some(transform) = transforms.fetch(entity) {
                 let count = lyon::tessellation::basic_shapes::stroke_circle(
-                    lyon::math::point(0., 0.),
-                    0.5,
+                    lyon::math::point(
+                        transform.0.translation.vector.x as f32,
+                        transform.0.translation.vector.y as f32,
+                    ),
+                    16.,
                     &StrokeOptions::default()
-                        .with_line_width(0.01)
-                        .with_tolerance(0.01),
+                        .with_line_width(1.0)
+                        .with_tolerance(0.5),
                     &mut buffer_builder,
                 )
                 .unwrap();
@@ -273,25 +276,56 @@ where
             return;
         }
 
-        let mut pass = render_ctx
-            .encoder
-            .begin_render_pass(&wgpu::RenderPassDescriptor {
-                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &render_ctx.frame,
-                    resolve_target: None,
-                    load_op: wgpu::LoadOp::Clear,
-                    store_op: wgpu::StoreOp::Store,
-                    clear_color: Default::default(),
+        let proj = nalgebra::Matrix4::new_orthographic(0., 1280., 720., 0., -10., 10.);
+        let view = nalgebra::Matrix4::identity();
+
+        let vp = MVP {
+            view: view.into(),
+            proj: proj.into(),
+            camera_pos: [0., 0., 0.],
+            _padding: 0.0,
+        };
+
+        let global_buffer = render_ctx
+            .device
+            .create_buffer_with_data(vp.as_bytes(), wgpu::BufferUsage::UNIFORM);
+
+        let global_bind_group = render_ctx
+            .device
+            .create_bind_group(&wgpu::BindGroupDescriptor {
+                layout: &render_ctx.pipelines.primitives.1,
+                bindings: &[wgpu::Binding {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer {
+                        buffer: &global_buffer,
+                        range: Default::default(),
+                    },
                 }],
-                depth_stencil_attachment: None,
+                label: None,
             });
 
-        pass.set_pipeline(&render_ctx.pipelines.primitives);
-        pass.set_index_buffer(self.index_buffer.as_ref().unwrap(), 0, 0);
-        pass.set_vertex_buffer(0, self.vertex_buffer.as_ref().unwrap(), 0, 0);
+        {
+            let mut pass = render_ctx
+                .encoder
+                .begin_render_pass(&wgpu::RenderPassDescriptor {
+                    color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                        attachment: &render_ctx.frame,
+                        resolve_target: None,
+                        load_op: wgpu::LoadOp::Clear,
+                        store_op: wgpu::StoreOp::Store,
+                        clear_color: Default::default(),
+                    }],
+                    depth_stencil_attachment: None,
+                });
 
-        for (start, end) in &self.primitives {
-            pass.draw_indexed(*start..*end, 0, 0..1);
+            pass.set_pipeline(&render_ctx.pipelines.primitives.0);
+            pass.set_bind_group(0, &global_bind_group, &[]);
+            pass.set_index_buffer(self.index_buffer.as_ref().unwrap(), 0, 0);
+            pass.set_vertex_buffer(0, self.vertex_buffer.as_ref().unwrap(), 0, 0);
+
+            for (start, end) in &self.primitives {
+                pass.draw_indexed(*start..*end, 0, 0..1);
+            }
         }
     }
 }

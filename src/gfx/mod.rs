@@ -49,7 +49,7 @@ pub struct DefaultPipelines {
     ),
     pub pixel: (wgpu::RenderPipeline, wgpu::BindGroupLayout),
     pub raycast2d: (wgpu::RenderPipeline, wgpu::BindGroupLayout),
-    pub primitives: wgpu::RenderPipeline,
+    pub primitives: (wgpu::RenderPipeline, wgpu::BindGroupLayout),
 }
 
 pub fn default_render_pipelines(device: &wgpu::Device) -> DefaultPipelines {
@@ -510,7 +510,7 @@ fn raycast_2d_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::Bi
     )
 }
 
-fn primitive_pipeline(device: &wgpu::Device) -> RenderPipeline {
+fn primitive_pipeline(device: &wgpu::Device) -> (RenderPipeline, wgpu::BindGroupLayout) {
     let vs_source = include_bytes!(concat!(env!("OUT_DIR"), "/primitive.vert.spv"));
     let fs_source = include_bytes!(concat!(env!("OUT_DIR"), "/primitive.frag.spv"));
 
@@ -519,61 +519,74 @@ fn primitive_pipeline(device: &wgpu::Device) -> RenderPipeline {
     let fs_module = device
         .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
 
+    let global_bind_group_layout =
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            bindings: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStage::VERTEX,
+                ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+            }],
+            label: None,
+        });
+
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        bind_group_layouts: &[],
+        bind_group_layouts: &[&global_bind_group_layout],
     });
 
-    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        layout: &pipeline_layout,
-        vertex_stage: wgpu::ProgrammableStageDescriptor {
-            module: &vs_module,
-            entry_point: "main",
-        },
-        fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
-            module: &fs_module,
-            entry_point: "main",
-        }),
-        rasterization_state: Some(wgpu::RasterizationStateDescriptor {
-            front_face: wgpu::FrontFace::Ccw,
-            cull_mode: wgpu::CullMode::None,
-            depth_bias: 0,
-            depth_bias_slope_scale: 0.0,
-            depth_bias_clamp: 0.0,
-        }),
-        primitive_topology: wgpu::PrimitiveTopology::TriangleList,
-        color_states: &[wgpu::ColorStateDescriptor {
-            format: wgpu::TextureFormat::Bgra8UnormSrgb,
-            alpha_blend: wgpu::BlendDescriptor::REPLACE,
-            color_blend: wgpu::BlendDescriptor::REPLACE,
-            write_mask: wgpu::ColorWrite::ALL,
-        }],
-        depth_stencil_state: None,
-        sample_count: 1,
-        sample_mask: 0,
-        alpha_to_coverage_enabled: false,
-        vertex_state: VertexStateDescriptor {
-            index_format: wgpu::IndexFormat::Uint16,
-            vertex_buffers: &[wgpu::VertexBufferDescriptor {
-                stride: mem::size_of::<Vertex2D>() as u64,
-                step_mode: wgpu::InputStepMode::Vertex,
-                attributes: &[
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 0,
-                        format: wgpu::VertexFormat::Float2,
-                        shader_location: 0,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 2 * 4,
-                        format: wgpu::VertexFormat::Float2,
-                        shader_location: 1,
-                    },
-                    wgpu::VertexAttributeDescriptor {
-                        offset: 2 * 4 + 2 * 4,
-                        format: wgpu::VertexFormat::Float4,
-                        shader_location: 2,
-                    },
-                ],
+    (
+        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            layout: &pipeline_layout,
+            vertex_stage: wgpu::ProgrammableStageDescriptor {
+                module: &vs_module,
+                entry_point: "main",
+            },
+            fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
+                module: &fs_module,
+                entry_point: "main",
+            }),
+            rasterization_state: Some(wgpu::RasterizationStateDescriptor {
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: wgpu::CullMode::None,
+                depth_bias: 0,
+                depth_bias_slope_scale: 0.0,
+                depth_bias_clamp: 0.0,
+            }),
+            primitive_topology: wgpu::PrimitiveTopology::TriangleList,
+            color_states: &[wgpu::ColorStateDescriptor {
+                format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                alpha_blend: wgpu::BlendDescriptor::REPLACE,
+                color_blend: wgpu::BlendDescriptor::REPLACE,
+                write_mask: wgpu::ColorWrite::ALL,
             }],
-        },
-    })
+            depth_stencil_state: None,
+            sample_count: 1,
+            sample_mask: 0,
+            alpha_to_coverage_enabled: false,
+            vertex_state: VertexStateDescriptor {
+                index_format: wgpu::IndexFormat::Uint16,
+                vertex_buffers: &[wgpu::VertexBufferDescriptor {
+                    stride: mem::size_of::<Vertex2D>() as u64,
+                    step_mode: wgpu::InputStepMode::Vertex,
+                    attributes: &[
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 0,
+                            format: wgpu::VertexFormat::Float2,
+                            shader_location: 0,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 2 * 4,
+                            format: wgpu::VertexFormat::Float2,
+                            shader_location: 1,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            offset: 2 * 4 + 2 * 4,
+                            format: wgpu::VertexFormat::Float4,
+                            shader_location: 2,
+                        },
+                    ],
+                }],
+            },
+        }),
+        global_bind_group_layout,
+    )
 }
