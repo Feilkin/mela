@@ -181,7 +181,13 @@ impl Mesh2D {
 #[derive(Clone, Debug)]
 pub struct PrimitiveComponent {
     pub color: [f32; 4],
-    pub shape: Path,
+    pub shape: PrimitiveShape,
+}
+
+#[derive(Clone, Debug)]
+pub enum PrimitiveShape {
+    Ball(f32),
+    Path(Path),
 }
 
 impl Component for PrimitiveComponent {}
@@ -235,18 +241,23 @@ where
 
         for (entity, prim) in primitive_components.iter() {
             if let Some(transform) = transforms.fetch(entity) {
-                let count = lyon::tessellation::basic_shapes::stroke_circle(
-                    lyon::math::point(
-                        transform.0.translation.vector.x as f32,
-                        transform.0.translation.vector.y as f32,
-                    ),
-                    16.,
-                    &StrokeOptions::default()
-                        .with_line_width(1.0)
-                        .with_tolerance(0.5),
-                    &mut buffer_builder,
-                )
-                .unwrap();
+                let count = match prim.shape {
+                    PrimitiveShape::Ball(radius) => {
+                        lyon::tessellation::basic_shapes::stroke_circle(
+                            lyon::math::point(
+                                transform.0.translation.vector.x as f32,
+                                transform.0.translation.vector.y as f32,
+                            ),
+                            radius,
+                            &StrokeOptions::default()
+                                .with_line_width(1.0)
+                                .with_tolerance(0.5),
+                            &mut buffer_builder,
+                        )
+                        .unwrap()
+                    }
+                    _ => todo!(),
+                };
 
                 primitives.push((last_primitive_index, last_primitive_index + count.indices));
                 last_primitive_index = last_primitive_index + count.indices;

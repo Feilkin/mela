@@ -5,6 +5,7 @@
 // re-export used libraries?
 // do we want to wrap this instead? probably not
 pub use imgui;
+pub use itertools;
 pub use lyon;
 pub use nalgebra;
 #[cfg(feature = "2d")]
