@@ -17,6 +17,7 @@ use winit::{
 use crate::debug::DebugContext;
 use crate::game::Playable;
 use crate::gfx::{default_render_pipelines, RenderContext};
+use winit::event::WindowEvent;
 
 fn default_max_fps() -> u32 {
     300
@@ -237,6 +238,19 @@ impl<G: 'static + Playable> Application<G> {
                         };
 
                         queue.submit(&[update_buffer, draw_buffer])
+                    }
+                }
+                event
+                @
+                Event::WindowEvent {
+                    event: WindowEvent::MouseInput { .. },
+                    ..
+                } => {
+                    if !imgui_ctx.io().want_capture_mouse {
+                        match game.push_event(&event) {
+                            Some(flow) => *control_flow = flow,
+                            None => (),
+                        }
                     }
                 }
                 event @ _ => match game.push_event(&event) {
