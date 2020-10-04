@@ -230,17 +230,19 @@ where
         let mut last_primitive_index = 0;
         let mut geometry_buffer: VertexBuffers<Vertex2D, u16> = VertexBuffers::new();
         let mut tesselator = StrokeTessellator::new();
-        let mut buffer_builder = BuffersBuilder::new(
-            &mut geometry_buffer,
-            |pos: lyon::math::Point, _: StrokeAttributes| Vertex2D {
-                position: pos.to_array(),
-                texture_coords: [0., 0.],
-                color: [1., 1., 1., 1.],
-            },
-        );
 
         for (entity, prim) in primitive_components.iter() {
             if let Some(transform) = transforms.fetch(entity) {
+                let color = prim.color;
+                let mut buffer_builder = BuffersBuilder::new(
+                    &mut geometry_buffer,
+                    move |pos: lyon::math::Point, _: StrokeAttributes| Vertex2D {
+                        position: pos.to_array(),
+                        texture_coords: [0., 0.],
+                        color,
+                    },
+                );
+
                 let count = match prim.shape {
                     PrimitiveShape::Ball(radius) => {
                         lyon::tessellation::basic_shapes::stroke_circle(
