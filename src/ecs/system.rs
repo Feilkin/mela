@@ -84,6 +84,12 @@ pub trait SystemData<'access, W: World> {
     fn get(world: &'access W) -> Self;
 }
 
+impl<'a, W: World> SystemData<'a, W> for () {
+    fn get(world: &'a W) -> Self {
+        ()
+    }
+}
+
 impl<'access, W, C> SystemData<'access, W> for Write<'access, C>
 where
     C: 'access + Component,
