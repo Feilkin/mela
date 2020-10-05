@@ -243,14 +243,14 @@ where
                     },
                 );
 
-                let count = match prim.shape {
+                let count = match &prim.shape {
                     PrimitiveShape::Ball(radius) => {
                         lyon::tessellation::basic_shapes::stroke_circle(
                             lyon::math::point(
                                 transform.0.translation.vector.x as f32,
                                 transform.0.translation.vector.y as f32,
                             ),
-                            radius,
+                            *radius,
                             &StrokeOptions::default()
                                 .with_line_width(1.0)
                                 .with_tolerance(0.5),
@@ -258,7 +258,9 @@ where
                         )
                         .unwrap()
                     }
-                    _ => todo!(),
+                    PrimitiveShape::Path(path) => tesselator
+                        .tessellate_path(path, &StrokeOptions::default(), &mut buffer_builder)
+                        .unwrap(),
                 };
 
                 primitives.push((last_primitive_index, last_primitive_index + count.indices));
