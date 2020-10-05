@@ -186,7 +186,7 @@ pub struct PrimitiveComponent {
 
 #[derive(Clone, Debug)]
 pub enum PrimitiveShape {
-    Ball(f32),
+    Ball(f32, f32),
     Path(Path),
 }
 
@@ -244,13 +244,15 @@ where
                 );
 
                 let count = match &prim.shape {
-                    PrimitiveShape::Ball(radius) => {
-                        lyon::tessellation::basic_shapes::stroke_circle(
+                    PrimitiveShape::Ball(radiusX, radiusY) => {
+
+                        lyon::tessellation::basic_shapes::stroke_ellipse(
                             lyon::math::point(
                                 transform.0.translation.vector.x as f32,
                                 transform.0.translation.vector.y as f32,
                             ),
-                            *radius,
+                            lyon::tessellation::math::Vector::new(*radiusX, *radiusY),
+                            lyon::tessellation::math::Angle::radians(transform.rotation.angle() as f32),
                             &StrokeOptions::default()
                                 .with_line_width(1.0)
                                 .with_tolerance(0.5),
