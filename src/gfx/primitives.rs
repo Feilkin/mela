@@ -245,23 +245,28 @@ where
 
                 let count = match &prim.shape {
                     PrimitiveShape::Ball(radiusX, radiusY) => {
-
                         lyon::tessellation::basic_shapes::stroke_ellipse(
                             lyon::math::point(
                                 transform.0.translation.vector.x as f32,
                                 transform.0.translation.vector.y as f32,
                             ),
                             lyon::tessellation::math::Vector::new(*radiusX, *radiusY),
-                            lyon::tessellation::math::Angle::radians(transform.rotation.angle() as f32),
+                            lyon::tessellation::math::Angle::radians(
+                                transform.rotation.angle() as f32
+                            ),
                             &StrokeOptions::default()
-                                .with_line_width(1.0)
+                                .with_line_width(1.3)
                                 .with_tolerance(0.5),
                             &mut buffer_builder,
                         )
                         .unwrap()
                     }
                     PrimitiveShape::Path(path) => tesselator
-                        .tessellate_path(path, &StrokeOptions::default(), &mut buffer_builder)
+                        .tessellate_path(
+                            path,
+                            &StrokeOptions::default().with_line_width(2.),
+                            &mut buffer_builder,
+                        )
                         .unwrap(),
                 };
 
