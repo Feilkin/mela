@@ -156,6 +156,26 @@ where
     }
 }
 
+impl<'a, A, B, C, D, E, W> SystemData<'a, W> for (A, B, C, D, E)
+where
+    A: SystemData<'a, W>,
+    B: SystemData<'a, W>,
+    C: SystemData<'a, W>,
+    D: SystemData<'a, W>,
+    E: SystemData<'a, W>,
+    W: World,
+{
+    fn get(world: &'a W) -> Self {
+        (
+            A::get(world),
+            B::get(world),
+            C::get(world),
+            D::get(world),
+            E::get(world),
+        )
+    }
+}
+
 pub trait System<W: World> {
     type SystemData<'a>: SystemData<'a, W>;
 
