@@ -32,8 +32,8 @@ zerocopy = "0.2"
 lyon = "0.16.2"
 
 
-nphysics3d = { version = "0.17", optional = true }
-nphysics2d = { version = "0.17", optional = true }
+nphysics3d = { version = "0.17", default-features = false, features = [ "dim3", "use-wasm-bindgen" ], optional = true }
+nphysics2d = { version = "0.17", default-features = false, features = [ "dim2", "use-wasm-bindgen" ], optional = true }
 gltf = { version = "0.15.2", features = ["import", "extras", "KHR_lights_punctual"], optional = true }
 openxr = { version = "0.12.1", features = ["loaded"], optional = true }
 
