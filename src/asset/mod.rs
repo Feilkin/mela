@@ -7,6 +7,7 @@ use std::rc::Rc;
 // Example Asset implementation
 // TODO: move to crates when done.
 use crate::gfx::{RenderContext, Texture};
+use wgpu::util::DeviceExt;
 
 #[cfg(feature = "3d")]
 pub mod scene;
@@ -78,7 +79,6 @@ where
         let texture = render_ctx.device.create_texture(&wgpu::TextureDescriptor {
             label: None,
             size: texture_extent,
-            array_layer_count: 1,
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -89,19 +89,20 @@ where
         // upload image data to texture
         let temp_buf = render_ctx
             .device
-            .create_buffer_with_data(&img.into_raw(), wgpu::BufferUsage::COPY_SRC);
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: &img.into_raw(),
+                usage: wgpu::BufferUsage::COPY_SRC,
+            });
 
         render_ctx.encoder.copy_buffer_to_texture(
             wgpu::BufferCopyView {
                 buffer: &temp_buf,
-                offset: 0,
-                bytes_per_row: img_dim.0 * 4,
-                rows_per_image: 0,
+                layout: Default::default(),
             },
             wgpu::TextureCopyView {
                 texture: &texture,
                 mip_level: 0,
-                array_layer: 0,
                 origin: Default::default(),
             },
             texture_extent,
@@ -128,7 +129,6 @@ impl Asset<Texture> for Bytes {
         let texture = render_ctx.device.create_texture(&wgpu::TextureDescriptor {
             label: None,
             size: texture_extent,
-            array_layer_count: 1,
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -139,19 +139,20 @@ impl Asset<Texture> for Bytes {
         // upload image data to texture
         let temp_buf = render_ctx
             .device
-            .create_buffer_with_data(&img.into_raw(), wgpu::BufferUsage::COPY_SRC);
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: &img.into_raw(),
+                usage: wgpu::BufferUsage::COPY_SRC,
+            });
 
         render_ctx.encoder.copy_buffer_to_texture(
             wgpu::BufferCopyView {
                 buffer: &temp_buf,
-                offset: 0,
-                bytes_per_row: img_dim.0 * 4,
-                rows_per_image: 0,
+                layout: Default::default(),
             },
             wgpu::TextureCopyView {
                 texture: &texture,
                 mip_level: 0,
-                array_layer: 0,
                 origin: Default::default(),
             },
             texture_extent,

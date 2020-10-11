@@ -4,6 +4,7 @@ use wgpu::{BindGroup, Buffer};
 
 use crate::gfx::primitives::{Quad, Vertex2D};
 use crate::gfx::{RenderContext, Texture};
+use wgpu::util::DeviceExt;
 
 pub struct Spritebatch {
     texture: Texture,
@@ -61,11 +62,19 @@ impl Spritebatch {
 
         let vertex_buf = render_ctx
             .device
-            .create_buffer_with_data(&self.vertices.as_bytes(), wgpu::BufferUsage::VERTEX);
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: &self.vertices.as_bytes(),
+                usage: wgpu::BufferUsage::VERTEX,
+            });
 
         let index_buf = render_ctx
             .device
-            .create_buffer_with_data(&self.indices.as_bytes(), wgpu::BufferUsage::INDEX);
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: &self.indices.as_bytes(),
+                usage: wgpu::BufferUsage::INDEX,
+            });
 
         self.buffer = Some((vertex_buf, index_buf));
 
@@ -77,9 +86,12 @@ impl Spritebatch {
         // TODO: get rid of zerobytes
         use zerocopy::AsBytes;
 
-        let texture_view = self.texture.create_default_view();
+        let texture_view = self
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
 
         let sampler = render_ctx.device.create_sampler(&wgpu::SamplerDescriptor {
+            label: None,
             address_mode_u: Default::default(),
             address_mode_v: Default::default(),
             address_mode_w: Default::default(),
@@ -88,7 +100,8 @@ impl Spritebatch {
             mipmap_filter: Default::default(),
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
-            compare: wgpu::CompareFunction::Never,
+            compare: Some(wgpu::CompareFunction::Never),
+            anisotropy_clamp: None,
         });
 
         let transformations: [[f32; 4]; 4] = nalgebra::Matrix4::new_nonuniform_scaling(
@@ -98,33 +111,38 @@ impl Spritebatch {
         .append_translation(&nalgebra::Vector3::new(-1., -1., 0.))
         .into();
 
-        let transforms_buffer = render_ctx
-            .device
-            .create_buffer_with_data(transformations.as_bytes(), wgpu::BufferUsage::UNIFORM);
+        let transforms_buffer =
+            render_ctx
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: None,
+                    contents: &transformations.as_bytes(),
+                    usage: wgpu::BufferUsage::UNIFORM,
+                });
 
         self.bind_group = Some((
             render_ctx
                 .device
                 .create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: None,
                     layout: &render_ctx.pipelines.pixel.1,
-                    bindings: &[
-                        wgpu::Binding {
+                    entries: &[
+                        wgpu::BindGroupEntry {
                             binding: 0,
                             resource: wgpu::BindingResource::TextureView(&texture_view),
                         },
-                        wgpu::Binding {
+                        wgpu::BindGroupEntry {
                             binding: 1,
                             resource: wgpu::BindingResource::Sampler(&sampler),
                         },
-                        wgpu::Binding {
+                        wgpu::BindGroupEntry {
                             binding: 2,
-                            resource: wgpu::BindingResource::Buffer {
-                                buffer: &transforms_buffer,
-                                range: 0..std::mem::size_of::<[[f32; 4]; 4]>() as u64,
-                            },
+                            resource: wgpu::BindingResource::Buffer(
+                                transforms_buffer
+                                    .slice(0..std::mem::size_of::<[[f32; 4]; 4]>() as u64),
+                            ),
                         },
                     ],
-                    label: None,
                 }),
             transforms_buffer,
         ));
@@ -167,17 +185,15 @@ impl Spritebatch {
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                     attachment: &render_ctx.frame,
                     resolve_target: None,
-                    load_op: wgpu::LoadOp::Load,
-                    store_op: wgpu::StoreOp::Store,
-                    clear_color: wgpu::Color::TRANSPARENT,
+                    ops: Default::default(),
                 }],
                 depth_stencil_attachment: None,
             });
 
         rpass.set_pipeline(&render_ctx.pipelines.pixel.0);
         rpass.set_bind_group(0, bind_group, &[]);
-        rpass.set_index_buffer(index_buf, 0, 0);
-        rpass.set_vertex_buffer(0, &vertex_buf, 0, 0);
+        rpass.set_index_buffer(index_buf.slice(..));
+        rpass.set_vertex_buffer(0, vertex_buf.slice(..));
         rpass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
     }
 
@@ -213,17 +229,15 @@ impl Spritebatch {
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                     attachment: view,
                     resolve_target: None,
-                    load_op: wgpu::LoadOp::Load,
-                    store_op: wgpu::StoreOp::Store,
-                    clear_color: wgpu::Color::TRANSPARENT,
+                    ops: Default::default(),
                 }],
                 depth_stencil_attachment: None,
             });
 
         rpass.set_pipeline(&render_ctx.pipelines.pixel.0);
         rpass.set_bind_group(0, bind_group, &[]);
-        rpass.set_index_buffer(index_buf, 0, 0);
-        rpass.set_vertex_buffer(0, &vertex_buf, 0, 0);
+        rpass.set_index_buffer(index_buf.slice(..));
+        rpass.set_vertex_buffer(0, vertex_buf.slice(..));
         rpass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
     }
 }

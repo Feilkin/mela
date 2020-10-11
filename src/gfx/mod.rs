@@ -65,16 +65,18 @@ pub fn default_render_pipelines(device: &wgpu::Device) -> DefaultPipelines {
 fn default_textured_pipeline(
     device: &wgpu::Device,
 ) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_bytes!(concat!(env!("OUT_DIR"), "/textured.vert.spv"));
-    let fs_source = include_bytes!(concat!(env!("OUT_DIR"), "/textured.frag.spv"));
-
-    let vs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
-    let fs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
+    let vs_module = device.create_shader_module(wgpu::include_spirv!(concat!(
+        env!("OUT_DIR"),
+        "/textured.vert.spv"
+    )));
+    let fs_module = device.create_shader_module(wgpu::include_spirv!(concat!(
+        env!("OUT_DIR"),
+        "/textured.frag.spv"
+    )));
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        bindings: &[
+        label: None,
+        entries: &[
             wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStage::FRAGMENT,
@@ -83,23 +85,27 @@ fn default_textured_pipeline(
                     dimension: wgpu::TextureViewDimension::D2,
                     component_type: TextureComponentType::Float,
                 },
+                count: None,
             },
             wgpu::BindGroupLayoutEntry {
                 binding: 1,
                 visibility: wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::Sampler { comparison: false },
+                count: None,
             },
         ],
-        label: None,
     });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: None,
         bind_group_layouts: &[&bind_group_layout],
+        push_constant_ranges: &[],
     });
 
     (
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            layout: &pipeline_layout,
+            label: None,
+            layout: Some(&pipeline_layout),
             vertex_stage: wgpu::ProgrammableStageDescriptor {
                 module: &vs_module,
                 entry_point: "main",
@@ -111,6 +117,7 @@ fn default_textured_pipeline(
             rasterization_state: Some(wgpu::RasterizationStateDescriptor {
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: wgpu::CullMode::None,
+                clamp_depth: false,
                 depth_bias: 0,
                 depth_bias_slope_scale: 0.0,
                 depth_bias_clamp: 0.0,
@@ -168,31 +175,45 @@ fn default_flat_pipeline(
     wgpu::BindGroupLayout,
     wgpu::BindGroupLayout,
 ) {
-    let vs_source = include_bytes!(concat!(env!("OUT_DIR"), "/flat.vert.spv"));
-    let fs_source = include_bytes!(concat!(env!("OUT_DIR"), "/flat.frag.spv"));
-
-    let vs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
-    let fs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
+    let vs_module = device.create_shader_module(wgpu::include_spirv!(concat!(
+        env!("OUT_DIR"),
+        "/flat.vert.spv"
+    )));
+    let fs_module = device.create_shader_module(wgpu::include_spirv!(concat!(
+        env!("OUT_DIR"),
+        "/flat.frag.spv"
+    )));
 
     let global_bind_group_layout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            bindings: &[
+            label: None,
+            entries: &[
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+                    ty: wgpu::BindingType::UniformBuffer {
+                        dynamic: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
                     visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+                    ty: wgpu::BindingType::UniformBuffer {
+                        dynamic: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 2,
                     visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+                    ty: wgpu::BindingType::UniformBuffer {
+                        dynamic: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 3,
@@ -202,33 +223,41 @@ fn default_flat_pipeline(
                         component_type: TextureComponentType::Float,
                         multisampled: false,
                     },
+                    count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 4,
                     visibility: wgpu::ShaderStage::FRAGMENT,
                     ty: wgpu::BindingType::Sampler { comparison: true },
+                    count: None,
                 },
             ],
-            label: None,
         });
 
     let model_bind_group_layout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            bindings: &[wgpu::BindGroupLayoutEntry {
+            label: None,
+            entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT,
-                ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+                ty: wgpu::BindingType::UniformBuffer {
+                    dynamic: false,
+                    min_binding_size: None,
+                },
+                count: None,
             }],
-            label: None,
         });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: None,
         bind_group_layouts: &[&global_bind_group_layout, &model_bind_group_layout],
+        push_constant_ranges: &[],
     });
 
     (
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            layout: &pipeline_layout,
+            label: None,
+            layout: Some(&pipeline_layout),
             vertex_stage: wgpu::ProgrammableStageDescriptor {
                 module: &vs_module,
                 entry_point: "main",
@@ -240,6 +269,7 @@ fn default_flat_pipeline(
             rasterization_state: Some(wgpu::RasterizationStateDescriptor {
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: wgpu::CullMode::Back,
+                clamp_depth: false,
                 depth_bias: 0,
                 depth_bias_slope_scale: 0.0,
                 depth_bias_clamp: 0.0,
@@ -255,10 +285,7 @@ fn default_flat_pipeline(
                 format: wgpu::TextureFormat::Depth32Float,
                 depth_write_enabled: true,
                 depth_compare: wgpu::CompareFunction::Less,
-                stencil_front: Default::default(),
-                stencil_back: Default::default(),
-                stencil_read_mask: 0,
-                stencil_write_mask: 0,
+                stencil: Default::default(),
             }),
             sample_count: 4,
             sample_mask: !0,
@@ -302,16 +329,18 @@ fn default_flat_pipeline(
 }
 
 fn default_pixel_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_bytes!(concat!(env!("OUT_DIR"), "/pixel.vert.spv"));
-    let fs_source = include_bytes!(concat!(env!("OUT_DIR"), "/pixel.frag.spv"));
+    let vs_module = device.create_shader_module(wgpu::include_spirv!(concat!(
+        env!("OUT_DIR"),
+        "/pixel.vert.spv"
+    )));
 
-    let vs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
-    let fs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
+    let fs_module = device.create_shader_module(wgpu::include_spirv!(concat!(
+        env!("OUT_DIR"),
+        "/pixel.frag.spv"
+    )));
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        bindings: &[
+        entries: &[
             wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStage::FRAGMENT,
@@ -320,28 +349,37 @@ fn default_pixel_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu:
                     dimension: wgpu::TextureViewDimension::D2,
                     component_type: TextureComponentType::Float,
                 },
+                count: None,
             },
             wgpu::BindGroupLayoutEntry {
                 binding: 1,
                 visibility: wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::Sampler { comparison: false },
+                count: None,
             },
             wgpu::BindGroupLayoutEntry {
                 binding: 2,
                 visibility: wgpu::ShaderStage::VERTEX,
-                ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+                ty: wgpu::BindingType::UniformBuffer {
+                    dynamic: false,
+                    min_binding_size: None,
+                },
+                count: None,
             },
         ],
         label: None,
     });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: None,
         bind_group_layouts: &[&bind_group_layout],
+        push_constant_ranges: &[],
     });
 
     (
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            layout: &pipeline_layout,
+            label: None,
+            layout: Some(&pipeline_layout),
             vertex_stage: wgpu::ProgrammableStageDescriptor {
                 module: &vs_module,
                 entry_point: "main",
@@ -353,6 +391,7 @@ fn default_pixel_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu:
             rasterization_state: Some(wgpu::RasterizationStateDescriptor {
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: wgpu::CullMode::None,
+                clamp_depth: false,
                 depth_bias: 0,
                 depth_bias_slope_scale: 0.0,
                 depth_bias_clamp: 0.0,
@@ -406,16 +445,18 @@ fn default_pixel_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu:
 }
 
 fn raycast_2d_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_bytes!(concat!(env!("OUT_DIR"), "/2draycast.vert.spv"));
-    let fs_source = include_bytes!(concat!(env!("OUT_DIR"), "/2draycast.frag.spv"));
+    let vs_module = device.create_shader_module(wgpu::include_spirv!(concat!(
+        env!("OUT_DIR"),
+        "/2draycast.vert.spv"
+    )));
 
-    let vs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
-    let fs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
+    let fs_module = device.create_shader_module(wgpu::include_spirv!(concat!(
+        env!("OUT_DIR"),
+        "/2draycast.frag.spv"
+    )));
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        bindings: &[
+        entries: &[
             wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStage::FRAGMENT,
@@ -424,6 +465,7 @@ fn raycast_2d_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::Bi
                     dimension: wgpu::TextureViewDimension::D2,
                     component_type: TextureComponentType::Float,
                 },
+                count: None,
             },
             wgpu::BindGroupLayoutEntry {
                 binding: 1,
@@ -433,28 +475,37 @@ fn raycast_2d_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::Bi
                     dimension: wgpu::TextureViewDimension::D2,
                     component_type: TextureComponentType::Float,
                 },
+                count: None,
             },
             wgpu::BindGroupLayoutEntry {
                 binding: 2,
                 visibility: wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::Sampler { comparison: false },
+                count: None,
             },
             wgpu::BindGroupLayoutEntry {
                 binding: 3,
                 visibility: wgpu::ShaderStage::FRAGMENT,
-                ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+                ty: wgpu::BindingType::UniformBuffer {
+                    dynamic: false,
+                    min_binding_size: None,
+                },
+                count: None,
             },
         ],
         label: None,
     });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: None,
         bind_group_layouts: &[&bind_group_layout],
+        push_constant_ranges: &[],
     });
 
     (
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            layout: &pipeline_layout,
+            label: None,
+            layout: Some(&pipeline_layout),
             vertex_stage: wgpu::ProgrammableStageDescriptor {
                 module: &vs_module,
                 entry_point: "main",
@@ -466,6 +517,7 @@ fn raycast_2d_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::Bi
             rasterization_state: Some(wgpu::RasterizationStateDescriptor {
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: wgpu::CullMode::None,
+                clamp_depth: false,
                 depth_bias: 0,
                 depth_bias_slope_scale: 0.0,
                 depth_bias_clamp: 0.0,
@@ -511,31 +563,40 @@ fn raycast_2d_pipeline(device: &wgpu::Device) -> (wgpu::RenderPipeline, wgpu::Bi
 }
 
 fn primitive_pipeline(device: &wgpu::Device) -> (RenderPipeline, wgpu::BindGroupLayout) {
-    let vs_source = include_bytes!(concat!(env!("OUT_DIR"), "/primitive.vert.spv"));
-    let fs_source = include_bytes!(concat!(env!("OUT_DIR"), "/primitive.frag.spv"));
+    let vs_module = device.create_shader_module(wgpu::include_spirv!(concat!(
+        env!("OUT_DIR"),
+        "/primitive.vert.spv"
+    )));
 
-    let vs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs_source[..])).unwrap());
-    let fs_module = device
-        .create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs_source[..])).unwrap());
+    let fs_module = device.create_shader_module(wgpu::include_spirv!(concat!(
+        env!("OUT_DIR"),
+        "/primitive.frag.spv"
+    )));
 
     let global_bind_group_layout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            bindings: &[wgpu::BindGroupLayoutEntry {
+            entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStage::VERTEX,
-                ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+                ty: wgpu::BindingType::UniformBuffer {
+                    dynamic: false,
+                    min_binding_size: None,
+                },
+                count: None,
             }],
             label: None,
         });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: None,
         bind_group_layouts: &[&global_bind_group_layout],
+        push_constant_ranges: &[],
     });
 
     (
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            layout: &pipeline_layout,
+            label: None,
+            layout: Some(&pipeline_layout),
             vertex_stage: wgpu::ProgrammableStageDescriptor {
                 module: &vs_module,
                 entry_point: "main",
@@ -547,6 +608,7 @@ fn primitive_pipeline(device: &wgpu::Device) -> (RenderPipeline, wgpu::BindGroup
             rasterization_state: Some(wgpu::RasterizationStateDescriptor {
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: wgpu::CullMode::None,
+                clamp_depth: false,
                 depth_bias: 0,
                 depth_bias_slope_scale: 0.0,
                 depth_bias_clamp: 0.0,

@@ -15,6 +15,7 @@ use lyon::lyon_tessellation::{
     StrokeTessellator, VertexBuffers,
 };
 use std::time::Duration;
+use wgpu::util::DeviceExt;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, AsBytes, FromBytes)]
@@ -281,16 +282,21 @@ where
 
         self.primitives = primitives;
 
-        self.vertex_buffer = Some(render_ctx.device.create_buffer_with_data(
-            geometry_buffer.vertices.as_bytes(),
-            wgpu::BufferUsage::VERTEX,
+        self.vertex_buffer = Some(render_ctx.device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: &geometry_buffer.vertices.as_bytes(),
+                usage: wgpu::BufferUsage::VERTEX,
+            },
         ));
 
-        self.index_buffer =
-            Some(render_ctx.device.create_buffer_with_data(
-                geometry_buffer.indices.as_bytes(),
-                wgpu::BufferUsage::INDEX,
-            ));
+        self.index_buffer = Some(render_ctx.device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: &geometry_buffer.indices.as_bytes(),
+                usage: wgpu::BufferUsage::INDEX,
+            },
+        ));
     }
 
     fn draw(&self, render_ctx: &mut RenderContext) {
@@ -308,22 +314,24 @@ where
             _padding: 0.0,
         };
 
-        let global_buffer = render_ctx
-            .device
-            .create_buffer_with_data(vp.as_bytes(), wgpu::BufferUsage::UNIFORM);
+        let global_buffer =
+            render_ctx
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: None,
+                    contents: &vp.as_bytes(),
+                    usage: wgpu::BufferUsage::UNIFORM,
+                });
 
         let global_bind_group = render_ctx
             .device
             .create_bind_group(&wgpu::BindGroupDescriptor {
                 layout: &render_ctx.pipelines.primitives.1,
-                bindings: &[wgpu::Binding {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer {
-                        buffer: &global_buffer,
-                        range: Default::default(),
-                    },
-                }],
                 label: None,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(global_buffer.slice(..)),
+                }],
             });
 
         {
@@ -333,17 +341,15 @@ where
                     color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                         attachment: &render_ctx.frame,
                         resolve_target: None,
-                        load_op: wgpu::LoadOp::Clear,
-                        store_op: wgpu::StoreOp::Store,
-                        clear_color: Default::default(),
+                        ops: Default::default(),
                     }],
                     depth_stencil_attachment: None,
                 });
 
             pass.set_pipeline(&render_ctx.pipelines.primitives.0);
             pass.set_bind_group(0, &global_bind_group, &[]);
-            pass.set_index_buffer(self.index_buffer.as_ref().unwrap(), 0, 0);
-            pass.set_vertex_buffer(0, self.vertex_buffer.as_ref().unwrap(), 0, 0);
+            pass.set_index_buffer(self.index_buffer.as_ref().unwrap().slice(..));
+            pass.set_vertex_buffer(0, self.vertex_buffer.as_ref().unwrap().slice(..));
 
             for (start, end) in &self.primitives {
                 pass.draw_indexed(*start..*end, 0, 0..1);

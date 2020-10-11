@@ -94,23 +94,25 @@ impl<G: 'static + Playable> Application<G> {
         // TODO: move this init stuff away from here
         let size = window.inner_size();
 
-        let surface = wgpu::Surface::create(&window);
+        let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
 
-        let adapter = block_on(wgpu::Adapter::request(
-            &wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                compatible_surface: None,
-            },
-            wgpu::BackendBit::PRIMARY,
-        ))
+        let surface = unsafe { instance.create_surface(&window) };
+
+        let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            compatible_surface: None,
+        }))
         .unwrap();
 
-        let (device, mut queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-            extensions: wgpu::Extensions {
-                anisotropic_filtering: false,
+        let (device, mut queue) = block_on(adapter.request_device(
+            &wgpu::DeviceDescriptor {
+                features: Default::default(),
+                limits: wgpu::Limits::default(),
+                shader_validation: false,
             },
-            limits: wgpu::Limits::default(),
-        }));
+            None,
+        ))
+        .expect("Failed to get rendering device");
 
         let render_pipelines = default_render_pipelines(&device);
 
@@ -149,7 +151,7 @@ impl<G: 'static + Playable> Application<G> {
             }]);
 
         let mut imgui_renderer =
-            imgui_wgpu::Renderer::new(&mut imgui_ctx, &device, &mut queue, sc_desc.format, None);
+            imgui_wgpu::Renderer::new(&mut imgui_ctx, &device, &mut queue, sc_desc.format);
 
         let screen_size = (
             self.settings.window_size[0] as u32,
@@ -171,7 +173,7 @@ impl<G: 'static + Playable> Application<G> {
                     }
                 }
                 Event::RedrawRequested(_) => {
-                    if let Ok(frame) = swap_chain.get_next_texture() {
+                    if let Ok(frame) = swap_chain.get_current_frame() {
                         let update_encoder =
                             device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                                 label: None,
@@ -181,7 +183,7 @@ impl<G: 'static + Playable> Application<G> {
                                 label: None,
                             });
 
-                        imgui_ctx.io_mut().update_delta_time(last_update);
+                        imgui_ctx.io_mut().update_delta_time(last_update.elapsed());
 
                         let delta = last_update.elapsed();
                         last_update = Instant::now();
@@ -189,7 +191,7 @@ impl<G: 'static + Playable> Application<G> {
                         let (_, update_buffer, draw_buffer) = {
                             let mut render_ctx = RenderContext {
                                 screen_size,
-                                frame: &frame.view,
+                                frame: &frame.output.view,
                                 encoder: update_encoder,
                                 device: &device,
                                 pipelines: &render_pipelines,
@@ -223,21 +225,34 @@ impl<G: 'static + Playable> Application<G> {
 
                             let DebugContext { ui, ui_renderer } = debug_ctx;
 
-                            imgui_renderer
-                                .render(
-                                    ui.render(),
-                                    &mut render_ctx.device,
-                                    &mut render_ctx.encoder,
-                                    &render_ctx.frame,
-                                )
-                                .unwrap();
+                            {
+                                let mut imgui_rpass = render_ctx.encoder.begin_render_pass(
+                                    &wgpu::RenderPassDescriptor {
+                                        color_attachments: &[
+                                            wgpu::RenderPassColorAttachmentDescriptor {
+                                                attachment: &render_ctx.frame,
+                                                resolve_target: None,
+                                                ops: wgpu::Operations {
+                                                    load: wgpu::LoadOp::Load,
+                                                    store: true,
+                                                },
+                                            },
+                                        ],
+                                        depth_stencil_attachment: None,
+                                    },
+                                );
+
+                                imgui_renderer
+                                    .render(ui.render(), &queue, &device, &mut imgui_rpass)
+                                    .unwrap();
+                            }
 
                             let RenderContext { frame, encoder, .. } = render_ctx;
 
                             (frame, update_buffer, encoder.finish())
                         };
 
-                        queue.submit(&[update_buffer, draw_buffer])
+                        queue.submit(vec![update_buffer, draw_buffer])
                     }
                 }
                 event
