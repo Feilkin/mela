@@ -188,6 +188,7 @@ pub struct PrimitiveComponent {
 #[derive(Clone, Debug)]
 pub enum PrimitiveShape {
     Ball(f32, f32),
+    Rectangle(f32, f32),
     Path(Path),
 }
 
@@ -254,6 +255,21 @@ where
                             lyon::tessellation::math::Vector::new(*radiusX, *radiusY),
                             lyon::tessellation::math::Angle::radians(
                                 transform.rotation.angle() as f32
+                            ),
+                            &StrokeOptions::default()
+                                .with_line_width(1.3)
+                                .with_tolerance(0.5),
+                            &mut buffer_builder,
+                        )
+                        .unwrap()
+                    }
+                    PrimitiveShape::Rectangle(width, height) => {
+                        lyon::tessellation::basic_shapes::stroke_rectangle(
+                            &lyon::math::rect(
+                                transform.0.translation.vector.x as f32,
+                                transform.0.translation.vector.y as f32,
+                                *width as f32,
+                                *height as f32,
                             ),
                             &StrokeOptions::default()
                                 .with_line_width(1.3)
