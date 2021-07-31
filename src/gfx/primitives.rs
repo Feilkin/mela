@@ -1,24 +1,21 @@
 //! Graphical primitives
 
-use zerocopy::{AsBytes, FromBytes};
-
 use crate::debug::DebugContext;
 use crate::ecs::component::Transform;
 use crate::ecs::system::Read;
 use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{Component, System};
 use crate::game::IoState;
-use crate::gfx::{RenderContext, Texture};
+use crate::gfx::Texture;
 use lyon::lyon_algorithms::path::Path;
 use lyon::lyon_tessellation::{
-    BuffersBuilder, FillAttributes, FillOptions, FillTessellator, StrokeAttributes, StrokeOptions,
-    StrokeTessellator, VertexBuffers,
+    BuffersBuilder, FillOptions, FillTessellator, StrokeOptions, StrokeTessellator, VertexBuffers,
 };
 use std::time::Duration;
 use wgpu::util::DeviceExt;
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, AsBytes, FromBytes)]
+#[derive(Clone, Copy, Debug)]
 pub struct Vertex {
     pub position: [f32; 3],
     pub normal: [f32; 3],
@@ -27,7 +24,7 @@ pub struct Vertex {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, AsBytes, FromBytes)]
+#[derive(Clone, Copy, Debug)]
 pub struct Vertex2D {
     pub position: [f32; 2],
     pub texture_coords: [f32; 2],
@@ -156,26 +153,6 @@ impl Quad {
             ],
             [0, 1, 3, 0, 3, 2],
         )
-    }
-}
-
-pub struct Mesh2D {
-    vertices: Vec<Vertex2D>,
-    indices: Vec<u16>,
-    texture: Texture,
-}
-
-impl Mesh2D {
-    pub fn new(vertices: Vec<Vertex2D>, indices: Vec<u16>, texture: Texture) -> Mesh2D {
-        Mesh2D {
-            vertices,
-            indices,
-            texture,
-        }
-    }
-
-    pub fn draw(&self, _render_ctx: &mut RenderContext) {
-        // FIXME implemtn this
     }
 }
 
@@ -375,7 +352,7 @@ where
 }
 
 // TODO: wtf is this??
-#[derive(Debug, Clone, Copy, AsBytes, FromBytes)]
+#[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct MVP {
     pub view: [[f32; 4]; 4],

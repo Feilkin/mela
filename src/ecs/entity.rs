@@ -1,9 +1,8 @@
 //! Entity related stuff
 
-use serde::export::Formatter;
-
 use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{Component, ComponentStorage, WriteAccess};
+use std::fmt::Formatter;
 
 /// Entities are just very complicated 64 bit numbers
 /// First 52 bits are the unique identity of this entity.

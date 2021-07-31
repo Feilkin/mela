@@ -15,18 +15,11 @@ pub use nphysics3d as nphysics;
 pub use winit;
 
 pub mod application;
-pub mod asset;
 pub mod debug;
 pub mod ecs;
 pub mod game;
 pub mod gfx;
-//pub mod profiler;
-pub mod state;
+pub mod scene;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub use application::Application;
+pub use game::SceneGame;

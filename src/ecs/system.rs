@@ -6,11 +6,6 @@ use crate::debug::DebugContext;
 use crate::ecs::world::{World, WorldStorage};
 use crate::ecs::{Component, ComponentStorage, Entity, ReadAccess, RwAccess};
 use crate::game::IoState;
-use crate::gfx::RenderContext;
-
-pub mod physics;
-#[cfg(feature = "3d")]
-pub mod scene;
 
 pub struct Read<'a, C> {
     reader: Box<dyn ReadAccess<'a, C> + 'a>,
@@ -185,13 +180,8 @@ pub trait System<W: World> {
         data: Self::SystemData<'f>,
         delta: Duration,
         io_state: &IoState,
-        render_ctx: &mut RenderContext, // TODO: fix profiler
-        //        profiler_tag: profiler::OpenTagTree<'f>
         debug_ctx: &mut DebugContext,
     ) -> ();
-
-    fn draw(&self, _render_ctx: &mut RenderContext) {}
-    fn draw_to(&self, _view: &[&wgpu::TextureView], _render_ctx: &mut RenderContext) {}
 }
 
 pub trait SystemCaller<W: World> {
@@ -200,11 +190,8 @@ pub trait SystemCaller<W: World> {
         world: &'a W,
         delta: Duration,
         io_state: &IoState,
-        render_ctx: &mut RenderContext,
         debug_ctx: &mut DebugContext,
     ) -> ();
-
-    fn render<'a, 's>(&'s self, render_ctx: &mut RenderContext) -> ();
 }
 
 impl<W: World, S> SystemCaller<W> for S
@@ -216,19 +203,13 @@ where
         world: &'a W,
         delta: Duration,
         io_state: &IoState,
-        render_ctx: &mut RenderContext,
         debug_ctx: &mut DebugContext,
     ) -> () {
         self.update(
             <<S as System<W>>::SystemData<'a> as SystemData<'a, W>>::get(world),
             delta,
             io_state,
-            render_ctx,
             debug_ctx,
         )
-    }
-
-    fn render<'a, 's>(&'s self, render_ctx: &mut RenderContext) -> () {
-        self.draw(render_ctx)
     }
 }

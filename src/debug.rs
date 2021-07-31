@@ -1,13 +1,10 @@
 //! Debugging utilities
 
-use crate::gfx::RenderContext;
-
-pub struct DebugContext<'ui, 'ui_renderer> {
-    pub ui: imgui::Ui<'ui>,
-    pub ui_renderer: &'ui_renderer mut imgui_wgpu::Renderer,
-    //    pub profiler_frame: OpenFrame,
+pub struct DebugContext<'a> {
+    pub ui: imgui::Ui<'a>,
+    pub ui_renderer: &'a mut imgui_wgpu::Renderer,
 }
 
 pub trait DebugDrawable {
-    fn draw_debug_ui(&mut self, _render_ctx: &mut RenderContext) {}
+    fn draw_debug_ui(&mut self, _debug_ctx: &mut DebugContext) {}
 }
