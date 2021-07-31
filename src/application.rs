@@ -1,5 +1,6 @@
 //! I don't know :shrug:
 
+use std::env;
 use std::fs::File;
 use std::io::BufReader;
 use std::time::{Duration, Instant};
@@ -7,6 +8,7 @@ use std::time::{Duration, Instant};
 use futures::executor::block_on;
 use serde::{Deserialize, Serialize};
 use winit::dpi::PhysicalSize;
+use winit::event::WindowEvent;
 use winit::{
     event::Event,
     event_loop::{ControlFlow, EventLoop},
@@ -15,8 +17,6 @@ use winit::{
 
 use crate::debug::DebugContext;
 use crate::game::Playable;
-use std::env;
-use winit::event::WindowEvent;
 
 fn default_max_fps() -> u32 {
     300
@@ -310,7 +310,7 @@ impl<G: 'static + Playable> Application<G> {
                         let delta = last_update.elapsed();
                         last_update = Instant::now();
 
-                        let (_, update_buffer, draw_buffer) = {
+                        let (_frame, update_buffer, draw_buffer) = {
                             #[cfg(not(target_arch = "wasm32"))]
                             let mut debug_ctx = {
                                 platform

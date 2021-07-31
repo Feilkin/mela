@@ -1,18 +1,19 @@
 //! Graphical primitives
 
-use crate::debug::DebugContext;
-use crate::ecs::component::Transform;
-use crate::ecs::system::Read;
-use crate::ecs::world::{World, WorldStorage};
-use crate::ecs::{Component, System};
-use crate::game::IoState;
-use crate::gfx::Texture;
 use lyon::lyon_algorithms::path::Path;
 use lyon::lyon_tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, StrokeOptions, StrokeTessellator, VertexBuffers,
 };
 use std::time::Duration;
 use wgpu::util::DeviceExt;
+
+use crate::debug::DebugContext;
+use crate::ecs::{Component, System};
+use crate::ecs::component::Transform;
+use crate::ecs::system::Read;
+use crate::ecs::world::{World, WorldStorage};
+use crate::game::IoState;
+use crate::gfx::Texture;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]

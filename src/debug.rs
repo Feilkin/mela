@@ -6,5 +6,5 @@ pub struct DebugContext<'a> {
 }
 
 pub trait DebugDrawable {
-    fn draw_debug_ui(&mut self, _debug_ctx: &mut DebugContext) {}
+    fn draw_debug_ui(&mut self, _debug_ctx: &DebugContext) {}
 }
