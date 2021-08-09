@@ -15,10 +15,16 @@ use winit::{event::Event, event_loop::ControlFlow};
 use crate::debug::DebugContext;
 use crate::ecs::query::Any;
 use crate::ecs::serialize::Canon;
+use crate::ecs::storage::IntoComponentSource;
 use crate::ecs::systems::{Builder as ScheduleBuilder, Runnable};
 use crate::ecs::{Registry, Resources, Schedule, World};
+use crate::gfx::MiddlewareRenderer;
+use crate::wgpu::util::StagingBelt;
+use crate::wgpu::{CommandEncoder, Device, TextureView};
 use crate::winit::event::{ElementState, MouseButton, WindowEvent};
 use crate::Delta;
+use nalgebra::Isometry3;
+use wgpu::{RenderPassColorAttachment, RenderPassDescriptor, TextureFormat};
 
 pub trait Playable: Sized {
     /// Advances this game to next state
@@ -28,7 +34,14 @@ pub trait Playable: Sized {
     fn push_event<T>(&mut self, event: &Event<T>) -> Option<ControlFlow>;
 
     /// Renders this game
-    fn redraw(&self, debug_ctx: &mut DebugContext) -> ();
+    fn redraw(
+        &mut self,
+        device: &Device,
+        encoder: &mut CommandEncoder,
+        frame: &TextureView,
+        staging_belt: &mut StagingBelt,
+        debug_ctx: &mut DebugContext,
+    ) -> ();
 }
 
 #[derive(Debug, Clone)]
@@ -138,6 +151,7 @@ pub struct SceneGameBuilder {
     registry: Registry<String>,
     scene_dir: String,
     first_scene: String,
+    renderers: Vec<Box<dyn Fn(&Device, &TextureFormat, [f32; 2]) -> Box<dyn MiddlewareRenderer>>>,
     schedule: ScheduleBuilder,
 }
 
@@ -150,8 +164,27 @@ impl SceneGameBuilder {
             registry,
             scene_dir: "./scenes".to_string(),
             first_scene: "splash.json".to_string(),
+            renderers: Vec::new(),
             schedule: Schedule::builder(),
         }
+    }
+
+    pub fn with_system<S: crate::ecs::systems::ParallelRunnable + 'static>(
+        mut self,
+        system: S,
+    ) -> SceneGameBuilder {
+        self.schedule.add_system(system);
+
+        self
+    }
+
+    pub fn with_renderer<R: MiddlewareRenderer + 'static>(mut self) -> SceneGameBuilder {
+        self.renderers
+            .push(Box::new(|device, texture_format, screen_size| {
+                Box::new(R::new(device, texture_format, screen_size))
+            }));
+
+        self
     }
 
     pub fn build(mut self) -> SceneGame {
@@ -162,20 +195,6 @@ impl SceneGameBuilder {
         )
         .unwrap_or_default();
 
-        world.push((crate::nalgebra::Isometry2::new(
-            nalgebra::Vector2::new(100f32, 200.),
-            0.,
-        ),));
-
-        save_scene(
-            &world,
-            std::env::current_dir()
-                .unwrap()
-                .join("examples/helloworld/scenes/splash.json"),
-            &mut self.registry,
-        )
-        .unwrap();
-
         SceneGame {
             registry: self.registry,
             scene_dir: self.scene_dir,
@@ -183,6 +202,8 @@ impl SceneGameBuilder {
             world,
             resources: Default::default(),
             io_state: Default::default(),
+            renderer_inits: self.renderers,
+            renderers: Vec::new(),
         }
     }
 }
@@ -195,11 +216,21 @@ pub struct SceneGame {
     world: World,
     resources: Resources,
     io_state: IoState,
+    renderer_inits:
+        Vec<Box<dyn Fn(&Device, &TextureFormat, [f32; 2]) -> Box<dyn MiddlewareRenderer>>>,
+    renderers: Vec<Box<dyn MiddlewareRenderer>>,
 }
 
 impl SceneGame {
     pub fn builder() -> SceneGameBuilder {
         SceneGameBuilder::new()
+    }
+
+    pub fn push_debug_entity<T>(&mut self, components: T)
+    where
+        Option<T>: IntoComponentSource,
+    {
+        self.world.push(components);
     }
 }
 
@@ -253,5 +284,37 @@ impl Playable for SceneGame {
         None
     }
 
-    fn redraw(&self, _debug_ctx: &mut DebugContext) -> () {}
+    fn redraw(
+        &mut self,
+        device: &Device,
+        encoder: &mut CommandEncoder,
+        frame: &TextureView,
+        staging_belt: &mut StagingBelt,
+        _debug_ctx: &mut DebugContext,
+    ) -> () {
+        if self.renderers.len() == 0 {
+            for init in &self.renderer_inits {
+                self.renderers
+                    .push(init(device, &TextureFormat::Bgra8UnormSrgb, [1920., 1080.]));
+            }
+        }
+
+        for renderer in &mut self.renderers {
+            renderer.prepare(&mut self.world, device, staging_belt, encoder);
+        }
+
+        let mut pass = encoder.begin_render_pass(&RenderPassDescriptor {
+            label: None,
+            color_attachments: &[RenderPassColorAttachment {
+                view: &frame,
+                resolve_target: None,
+                ops: Default::default(),
+            }],
+            depth_stencil_attachment: None,
+        });
+
+        for renderer in &mut self.renderers {
+            renderer.render(&mut pass);
+        }
+    }
 }

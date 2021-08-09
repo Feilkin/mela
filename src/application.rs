@@ -100,7 +100,7 @@ impl<G: 'static + Playable> ApplicationBuilder<G> {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("mela adapter"),
-                    features: Default::default(),
+                    features: wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
                     limits: wgpu::Limits::default(),
                 },
                 None,
@@ -269,6 +269,8 @@ impl<G: 'static + Playable> Application<G> {
                 .create_view(&wgpu::TextureViewDescriptor::default())
         };
 
+        let mut profiler_ui = puffin_imgui::ProfilerUi::default();
+
         let mut staging_belt = wgpu::util::StagingBelt::new(1024);
         let mut local_pool = futures::executor::LocalPool::new();
         let local_spawner = local_pool.spawner();
@@ -295,6 +297,9 @@ impl<G: 'static + Playable> Application<G> {
                 }
                 Event::RedrawRequested(_) => {
                     if let Ok(frame) = swap_chain.get_current_frame() {
+                        puffin::GlobalProfiler::lock().new_frame();
+                        puffin::profile_function!();
+
                         let update_encoder =
                             device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                                 label: None,
@@ -330,13 +335,21 @@ impl<G: 'static + Playable> Application<G> {
 
                             let update_buffer = update_encoder.finish();
 
-                            game.redraw(&mut debug_ctx);
+                            game.redraw(
+                                &device,
+                                &mut draw_encoder,
+                                &frame.output.view,
+                                &mut staging_belt,
+                                &mut debug_ctx,
+                            );
 
                             #[cfg(not(target_arch = "wasm32"))]
                             let ui = debug_ctx.ui;
 
                             #[cfg(not(target_arch = "wasm32"))]
                             {
+                                profiler_ui.window(&ui);
+
                                 let mut imgui_rpass =
                                     draw_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                                         label: Some("imgui renderpass"),
