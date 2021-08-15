@@ -1,10 +1,17 @@
 let EPSILON: f32 = 0.5;
-let light_pos: vec3<f32> = vec3<f32>(-70., 100., 13.);
+let light_pos: vec3<f32> = vec3<f32>(-70., 100., 130.);
+
+[[block]]
+struct Globals {
+    camera: mat4x4<f32>;
+};
 
 [[group(0), binding(0)]]
 var world_data: texture_3d<f32>;
 [[group(0), binding(1)]]
 var data_sampler: sampler;
+[[group(0), binding(2)]]
+var<uniform> camera: Globals;
 
 [[stage(vertex)]]
 fn vs_main(
@@ -37,12 +44,12 @@ fn world_to_uv(pos: vec3<f32>) -> vec3<f32> {
     return
         clamp(
         vec3<f32>(0., 0., 0.),
-        pos.xzy,
-        vec3<f32>(255., 255., 63.));
+        pos.xyz + vec3<f32>(128., 128., 0.),
+        vec3<f32>(255., 255., 127.));
 }
 
 fn sceneSDF(p: vec3<f32>) -> f32 {
-    return textureSample(world_data, data_sampler, world_to_uv(p) / vec3<f32>(256., 256., 64.)).r;
+    return textureSample(world_data, data_sampler, world_to_uv(p) / vec3<f32>(256., 256., 128.)).r;
 }
 
 fn estimateNormal(p: vec3<f32>) -> vec3<f32> {
@@ -55,23 +62,21 @@ fn estimateNormal(p: vec3<f32>) -> vec3<f32> {
 
 [[stage(fragment)]]
 fn fs_main([[builtin(position)]] in: vec4<f32>) -> [[location(0)]] vec4<f32> {
-    let eye_pos = vec3<f32>(-30., 43., -128.);
-    let ray_dir_in_view = ray_direction(45., vec2<f32>(1920., 1080.), in.xy);
-    let view_to_world = viewMatrix(eye_pos, vec3<f32>(128., 32., 128.), vec3<f32>(0., 1., 0.));
+    let eye_pos = vec3<f32>(0., 200., 100.);
+    let ray_dir_in_view = ray_direction(60., vec2<f32>(1920., 1080.), in.xy);
+    let view_to_world = viewMatrix(eye_pos, vec3<f32>(0., 0., 32.), vec3<f32>(0., 0., 1.));
     let ray_dir = view_to_world * ray_dir_in_view;
-    //let ray_dir = ray_dir_in_view;
 
     var ray: vec3<f32> = eye_pos;
 
     var depth: i32 = 0;
-    let max_depth = 32;
+    let max_depth = 64;
 
     var total_distance: f32 = 0.;
     var dist: f32 = 0.;
 
     loop {
         if (depth >= max_depth) { break; }
-        //dist = textureLoad(world_data, vec3<i32>(world_to_uv(ray)), 0).r;
         dist = sceneSDF(ray);
 
 
@@ -82,15 +87,27 @@ fn fs_main([[builtin(position)]] in: vec4<f32>) -> [[location(0)]] vec4<f32> {
         }
         total_distance = total_distance + dist;
 
+        if (total_distance >= 300.) { break; }
+
         depth = depth + 1;
     }
 
-    var fragColor: vec4<f32> = vec4<f32>(0.1, 0.5, 0.1, 1.0);
+    var fragColor: vec4<f32> = vec4<f32>(0.1, 0.1, 0.1, 1.0);
+
+
     if (depth != max_depth)  {
         let normal = estimateNormal(ray);
 
         // Output to screen
-        fragColor = vec4<f32>(ray.xy / 256., 1. - total_distance / 512., 1.0) * clamp(0.2, dot(light_pos, normal) * 0.6 + 0.4, 1.0);
+        fragColor = vec4<f32>(ray.xy / 256., 1. - total_distance / 300., 1.0) * clamp(0.2, dot(light_pos, normal) * 0.6 + 0.4, 1.0);
+    }
+
+    if (total_distance >= 300.) {
+        fragColor = vec4<f32>(0.1, 0.5, 0.1, 1.0);
+    } else {
+        if (depth > 20) {
+            fragColor = vec4<f32>(0.0, 0.0, 0.0, 1.0);
+        }
     }
 
     return fragColor;

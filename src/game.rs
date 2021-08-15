@@ -12,20 +12,63 @@ use serde::{
 };
 use winit::{event::Event, event_loop::ControlFlow};
 
-use crate::debug::DebugContext;
+use crate::debug::{DebugContext, DebugDrawable, DebugDrawers};
 use crate::ecs::query::Any;
 use crate::ecs::serialize::Canon;
 use crate::ecs::storage::IntoComponentSource;
 use crate::ecs::systems::{Builder as ScheduleBuilder, Runnable};
-use crate::ecs::{Registry, Resources, Schedule, World};
+use crate::ecs::{Entity, Registry, Resources, Schedule, World};
 use crate::gfx::MiddlewareRenderer;
+use crate::na::Isometry3;
 use crate::wgpu::util::StagingBelt;
 use crate::wgpu::{CommandEncoder, Device, TextureView};
+use crate::wgpu::{RenderPassColorAttachment, RenderPassDescriptor, TextureFormat};
 use crate::winit::event::{ElementState, MouseButton, WindowEvent};
 use crate::Delta;
-use nalgebra::Isometry3;
-use wgpu::{RenderPassColorAttachment, RenderPassDescriptor, TextureFormat};
 
+use legion::storage::Component;
+use rapier3d::dynamics::{
+    CCDSolver, IntegrationParameters, IslandManager, JointSet, RigidBodyBuilder, RigidBodySet,
+};
+use rapier3d::geometry::BroadPhase;
+use rapier3d::pipeline::PhysicsPipeline;
+use rapier3d::prelude::{ColliderBuilder, ColliderSet, NarrowPhase};
+
+pub struct PhysicsStuff {
+    pub integration_parameters: IntegrationParameters,
+    pub physics_pipeline: PhysicsPipeline,
+    pub island_manager: IslandManager,
+    pub broad_phase: BroadPhase,
+    pub narrow_phase: NarrowPhase,
+    pub joint_set: JointSet,
+    pub ccd_solver: CCDSolver,
+    pub rigid_body_set: RigidBodySet,
+    pub collider_set: ColliderSet,
+}
+
+impl PhysicsStuff {
+    pub fn new() -> PhysicsStuff {
+        let mut collider_set = ColliderSet::new();
+
+        PhysicsStuff {
+            integration_parameters: IntegrationParameters::default(),
+            physics_pipeline: PhysicsPipeline::new(),
+            island_manager: IslandManager::new(),
+            broad_phase: BroadPhase::new(),
+            narrow_phase: NarrowPhase::new(),
+            joint_set: JointSet::new(),
+            ccd_solver: CCDSolver::new(),
+            rigid_body_set: RigidBodySet::new(),
+            collider_set,
+        }
+    }
+}
+
+impl Default for PhysicsStuff {
+    fn default() -> Self {
+        PhysicsStuff::new()
+    }
+}
 pub trait Playable: Sized {
     /// Advances this game to next state
     fn update(&mut self, delta: Duration, debug_ctx: &mut DebugContext);
@@ -149,6 +192,7 @@ pub(crate) fn save_scene<P: AsRef<Path>>(
 /// Builder for Scene-based game
 pub struct SceneGameBuilder {
     registry: Registry<String>,
+    debug_drawers: DebugDrawers,
     scene_dir: String,
     first_scene: String,
     renderers: Vec<Box<dyn Fn(&Device, &TextureFormat, [f32; 2]) -> Box<dyn MiddlewareRenderer>>>,
@@ -158,10 +202,11 @@ pub struct SceneGameBuilder {
 impl SceneGameBuilder {
     pub fn new() -> SceneGameBuilder {
         let mut registry = Registry::default();
-        registry.register::<nalgebra::Isometry2<f32>>("isometry2".to_string());
+        registry.register::<crate::na::Isometry2<f32>>("isometry2".to_string());
 
         SceneGameBuilder {
             registry,
+            debug_drawers: Default::default(),
             scene_dir: "./scenes".to_string(),
             first_scene: "splash.json".to_string(),
             renderers: Vec::new(),
@@ -187,6 +232,22 @@ impl SceneGameBuilder {
         self
     }
 
+    pub fn register_component<C: Component + DebugDrawable>(mut self) -> SceneGameBuilder {
+        self.debug_drawers.insert::<C>();
+
+        self
+    }
+
+    pub fn register_addable_component<
+        C: Component + DebugDrawable + DebugDrawable + Default + Clone,
+    >(
+        mut self,
+    ) -> SceneGameBuilder {
+        self.debug_drawers.insert_addable::<C>();
+
+        self
+    }
+
     pub fn build(mut self) -> SceneGame {
         // load first scene
         let mut world = load_scene(
@@ -195,12 +256,17 @@ impl SceneGameBuilder {
         )
         .unwrap_or_default();
 
+        let mut resources = Resources::default();
+
+        resources.insert(PhysicsStuff::default());
+
         SceneGame {
             registry: self.registry,
+            debug_drawers: self.debug_drawers,
             scene_dir: self.scene_dir,
             schedule: self.schedule.build(),
             world,
-            resources: Default::default(),
+            resources,
             io_state: Default::default(),
             renderer_inits: self.renderers,
             renderers: Vec::new(),
@@ -211,6 +277,7 @@ impl SceneGameBuilder {
 /// Scene-based game
 pub struct SceneGame {
     registry: Registry<String>,
+    debug_drawers: DebugDrawers,
     scene_dir: String,
     schedule: Schedule,
     world: World,
@@ -226,20 +293,24 @@ impl SceneGame {
         SceneGameBuilder::new()
     }
 
-    pub fn push_debug_entity<T>(&mut self, components: T)
+    pub fn push_debug_entity<T>(&mut self, components: T) -> Entity
     where
         Option<T>: IntoComponentSource,
     {
-        self.world.push(components);
+        self.world.push(components)
     }
 }
 
 impl Playable for SceneGame {
     fn update(&mut self, delta: Duration, debug_ctx: &mut DebugContext) {
+        // TODO: move to editor game or something?
+        self.debug_drawers.draw_world(&mut self.world, debug_ctx);
+
         self.resources.insert(Delta(delta));
         self.resources.insert(self.io_state.clone());
 
-        self.schedule.execute(&mut self.world, &mut self.resources)
+        self.schedule.execute(&mut self.world, &mut self.resources);
+        self.io_state.update();
     }
 
     fn push_event<T>(&mut self, event: &Event<T>) -> Option<ControlFlow> {
@@ -277,6 +348,18 @@ impl Playable for SceneGame {
                     *button,
                     *state,
                 ));
+            }
+            Event::WindowEvent {
+                event:
+                    WindowEvent::KeyboardInput {
+                        device_id,
+                        input,
+                        is_synthetic,
+                    },
+                ..
+            } => {
+                self.io_state
+                    .set_key(input.scancode, input.state == ElementState::Pressed);
             }
             _ => (),
         };

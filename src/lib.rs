@@ -10,7 +10,7 @@ pub use imgui;
 pub use itertools;
 pub use legion as ecs;
 pub use lyon;
-pub use nalgebra;
+pub use rapier3d::na;
 pub use wgpu;
 pub use winit;
 
