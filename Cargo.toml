@@ -1,6 +1,7 @@
 [workspace]
 members = [
-    "mela"
+    "mela",
+    "mela-common",
 ]
 
 [profile.dev.package.rapier3d]
