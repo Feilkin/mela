@@ -26,6 +26,7 @@ use crate::wgpu::{RenderPassColorAttachment, RenderPassDescriptor, TextureFormat
 use crate::winit::event::{ElementState, MouseButton, WindowEvent};
 use crate::Delta;
 
+use crate::components::Transform;
 use legion::storage::Component;
 use rapier3d::dynamics::{
     CCDSolver, IntegrationParameters, IslandManager, JointSet, RigidBodyBuilder, RigidBodySet,
@@ -193,6 +194,8 @@ pub(crate) fn save_scene<P: AsRef<Path>>(
 pub struct SceneGameBuilder {
     registry: Registry<String>,
     debug_drawers: DebugDrawers,
+    stupid_ass_whole_world_accessor:
+        Box<dyn Fn(crate::ecs::systems::SystemBuilder) -> crate::ecs::systems::SystemBuilder>,
     scene_dir: String,
     first_scene: String,
     renderers: Vec<Box<dyn Fn(&Device, &TextureFormat, [f32; 2]) -> Box<dyn MiddlewareRenderer>>>,
@@ -201,17 +204,22 @@ pub struct SceneGameBuilder {
 
 impl SceneGameBuilder {
     pub fn new() -> SceneGameBuilder {
-        let mut registry = Registry::default();
-        registry.register::<crate::na::Isometry2<f32>>("isometry2".to_string());
-
-        SceneGameBuilder {
-            registry,
+        let mut builder = SceneGameBuilder {
+            registry: Registry::default(),
             debug_drawers: Default::default(),
+            stupid_ass_whole_world_accessor: Box::new(|builder| builder),
             scene_dir: "./scenes".to_string(),
             first_scene: "splash.json".to_string(),
             renderers: Vec::new(),
             schedule: Schedule::builder(),
-        }
+        };
+
+        builder.register_addable_component::<Transform>()
+    }
+
+    pub fn barrier(mut self) -> SceneGameBuilder {
+        self.schedule.flush();
+        self
     }
 
     pub fn with_system<S: crate::ecs::systems::ParallelRunnable + 'static>(
@@ -245,7 +253,18 @@ impl SceneGameBuilder {
     ) -> SceneGameBuilder {
         self.debug_drawers.insert_addable::<C>();
 
+        let previous_builder = self.stupid_ass_whole_world_accessor;
+        self.stupid_ass_whole_world_accessor =
+            Box::new(move |builder| (*previous_builder)(builder).write_component::<C>());
+
         self
+    }
+
+    pub fn system_builder_for_accessing_whole_known_world(
+        &self,
+        name: &'static str,
+    ) -> crate::ecs::SystemBuilder {
+        (*self.stupid_ass_whole_world_accessor)(crate::ecs::SystemBuilder::new(name))
     }
 
     pub fn build(mut self) -> SceneGame {

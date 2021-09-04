@@ -11,7 +11,11 @@ mod physics;
 mod sdf;
 
 use crate::physics::PhysicsBody;
+use legion::world::SubWorld;
+use legion::{Entity, EntityStore, IntoQuery};
 use mela::debug::DebugName;
+use mela::ecs::systems::CommandBuffer;
+use mela::ecs::Query;
 use mela::game::{IoState, PhysicsStuff};
 use physics::{
     add_physics_handles_system, physics_system, positions_from_physics_system,
@@ -24,6 +28,8 @@ use rapier3d::prelude::{
     BallJoint, ColliderBuilder, ColliderHandle, InteractionGroups, MassProperties, PrismaticJoint,
     RigidBodyBuilder, RigidBodyHandle,
 };
+use std::any::Any;
+use std::marker::PhantomData;
 
 #[mela::ecs::system(for_each)]
 fn move_ball(
@@ -57,17 +63,36 @@ fn move_ball(
 
 struct BallIndex(usize);
 
+struct Animator {
+    fun: Box<dyn Fn(&Entity, &mut SubWorld) -> () + Send + Sync>,
+}
+
 fn main() {
     env_logger::init();
     puffin::set_scopes_on(true);
     let mut game = mela::SceneGame::builder()
+        .register_addable_component::<SdfObject>()
         .with_system(add_physics_handles_system())
         .with_system(move_ball_system())
         .with_system(positions_to_physics_system())
         .with_system(physics_system())
         .with_system(positions_from_physics_system())
+        .barrier();
+
+    let sekoilu = game
+        .system_builder_for_accessing_whole_known_world("sekoilu")
+        .with_query(<(Entity, &mut Animator)>::query())
+        .build(|_, world, _, query| {
+            let (mut animators, mut rest_of_the_world) = world.split_for_query(&query);
+            for (entity, animator) in query.iter_mut(&mut animators) {
+                (*animator.fun)(entity, &mut rest_of_the_world);
+            }
+        });
+
+    let mut game = game
+        .with_system(sekoilu)
+        .barrier()
         .with_renderer::<sdf::renderer::SdfRenderer>()
-        .register_addable_component::<SdfObject>()
         .build();
 
     {
@@ -88,6 +113,15 @@ fn main() {
             SdfObject {
                 smoothing: 0.0,
                 shape: SdfShape::Cuboid(1000., 1000., 1.),
+            },
+            Animator {
+                fun: Box::new(|entity, world| {
+                    let entry = world.entry_mut(*entity).unwrap();
+                    let transform =
+                        unsafe { entry.get_component_unchecked::<Transform>() }.unwrap();
+
+                    transform.0.translation.z += 0.1;
+                }),
             },
         ));
     }
