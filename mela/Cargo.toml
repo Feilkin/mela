@@ -27,8 +27,13 @@ puffin = "0.5"
 puffin-imgui = "0.8"
 profiling = { version = "1.0.3", features = ["profile-with-puffin"] }
 rapier3d = { version = "0.11.0", features = ["serde-serialize"] }
+rodio = "0.14.0"
 
 
 [[example]]
 name="helloworld"
 path="../examples/helloworld/main.rs"
+
+[[example]]
+name="audio"
+path="../examples/audio/main.rs"

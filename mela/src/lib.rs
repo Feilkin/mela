@@ -19,6 +19,7 @@ pub use game::SceneGame;
 use std::ops::Deref;
 
 pub mod application;
+pub mod audio;
 pub mod components;
 pub mod debug;
 pub mod game;

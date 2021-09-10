@@ -34,6 +34,7 @@ use rapier3d::dynamics::{
 use rapier3d::geometry::BroadPhase;
 use rapier3d::pipeline::PhysicsPipeline;
 use rapier3d::prelude::{ColliderBuilder, ColliderSet, NarrowPhase};
+use rodio::OutputStream;
 
 pub struct PhysicsStuff {
     pub integration_parameters: IntegrationParameters,
@@ -276,8 +277,10 @@ impl SceneGameBuilder {
         .unwrap_or_default();
 
         let mut resources = Resources::default();
-
         resources.insert(PhysicsStuff::default());
+        let (stream, handle) = OutputStream::try_default().unwrap();
+        resources.insert(stream);
+        resources.insert(handle);
 
         SceneGame {
             registry: self.registry,
